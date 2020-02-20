@@ -481,6 +481,16 @@
               <FileType>5</FileType>
               <FilePath>..\app\camera.h</FilePath>
             </File>
+            <File>
+              <FileName>slave_mcu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\slave_mcu.c</FilePath>
+            </File>
+            <File>
+              <FileName>slave_mcu.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\slave_mcu.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -490,16 +500,6 @@
               <FileName>global_config.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\global\global_config.h</FilePath>
-            </File>
-            <File>
-              <FileName>debug.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\global\debug.c</FilePath>
-            </File>
-            <File>
-              <FileName>debug.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\global\debug.h</FilePath>
             </File>
             <File>
               <FileName>model_version.c</FileName>
@@ -556,6 +556,16 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>log.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\global\log.c</FilePath>
+            </File>
+            <File>
+              <FileName>log.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\global\log.h</FilePath>
             </File>
           </Files>
         </Group>

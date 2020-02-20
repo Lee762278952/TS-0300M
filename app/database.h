@@ -77,6 +77,10 @@ typedef struct {
     /* 屏幕亮度 */
     uint8_t brightness;
 
+	/* 系统签到、表决功能是否开启	*/
+	uint8_t signEn;
+	uint8_t voteEn;
+
     /* DSP参数配置 */
     DspCfg_S dsp[22];
 } SysCfg_S;

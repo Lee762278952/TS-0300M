@@ -52,6 +52,7 @@
  * Prototypes
  ******************************************************************************/
 /* API */
+static void Screen_Init(void);
 static void Screen_Launch(void);
 static void Screen_TransmitWithExData(ScreenProtocol_S *prot,uint16_t exLen, uint8_t *exData);
 static void Screen_Transmit(ScreenProtocol_S *prot);
@@ -59,7 +60,6 @@ static void Screen_SetBacklight(uint8_t brightness);
 
 
 /* Internal */
-static void Screen_LaunchTask(void *pvParameters);
 static void Screen_UartDataProcessTask(void *pvParameters);
 static void Screen_CtrlUartCallback(uint8_t data,void *para);
 static void Screen_NotifyConferenceWithExData(ScreenProtocol_S *prot, uint16_t exLen, uint8_t *exData);
@@ -79,6 +79,7 @@ static const uint8_t DataHead[DATA_HEAD_LENGTH] = {0x5A,0xA5,0};
 
 /* API */
 Screen_S Screen = {
+	.init = Screen_Init,
 	.launch = Screen_Launch,
 	.transmit = Screen_Transmit,
 	.transWithExData = Screen_TransmitWithExData,
@@ -88,30 +89,15 @@ Screen_S Screen = {
  * Code
  ******************************************************************************/
 /**
-* @Name  		Screen_Launch
-* @Author  		KT
+* @Name 		Screen_Init
+* @Author		KT
 * @Description
 * @para
 *
 *
 * @return
 */
-static void Screen_Launch(void){
-	if (xTaskCreate(Screen_LaunchTask, "Screen_LaunchTask", SCREEN_TASK_STACK_SIZE, null, SCREEN_TASK_PRIORITY, null) != pdPASS) {
-		Log.e("create screen launch task error\r\n");
-	}
-}
-
-/**
-* @Name  		Screen_LaunchTask
-* @Author  		KT
-* @Description
-* @para
-*
-*
-* @return
-*/
-static void Screen_LaunchTask(void *pvParameters){
+static void Screen_Init(void){
 	HAL_UartConfig_S *config;
 	
 	config = MALLOC(sizeof(HAL_UartConfig_S));
@@ -126,13 +112,22 @@ static void Screen_LaunchTask(void *pvParameters){
 	
 	HAL_UartInit(CtrlUartHandler, config);
 	HAL_UartSetCallback(CtrlUartHandler, RecvBuf , UART_RECV_BUF_SIZE, Screen_CtrlUartCallback, null);
+}
 
-	if (xTaskCreate(Screen_UartDataProcessTask, "Screen_UartDataProcessTask", SCREEN_TASK_STACK_SIZE,null, SCREEN_TASK_PRIORITY, NULL) != pdPASS)
-    {
+
+/**
+* @Name  		Screen_Launch
+* @Author  		KT
+* @Description
+* @para
+*
+*
+* @return
+*/
+static void Screen_Launch(void){
+	if (xTaskCreate(Screen_UartDataProcessTask, "Screen_UartDataProcessTask", SCREEN_TASK_STACK_SIZE,null, SCREEN_TASK_PRIORITY, NULL) != pdPASS){
         Log.e("create screen task error\r\n");
     }
-
-	vTaskDelete(null);
 }
 
 
@@ -150,8 +145,6 @@ static void Screen_UartDataProcessTask(void *pvParameters)
 	ScreenProtocol_S prot;
 	uint8_t exData[15],exLen;
 
-	Screen_Transmit(Protocol.screen(&prot,tType_Screen_Page,SP_WELCOME));
-	
 	Log.d("Screen process task start...\r\n");
 	while(1){
 		DELAY(100);

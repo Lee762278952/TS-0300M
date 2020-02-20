@@ -22,6 +22,7 @@
  * Prototypes
  ******************************************************************************/
 static void Time_Init(void);
+static bool Time_GetRstFlag(void);
 static void Time_GetNow(TimePara_S *para);
 static void Time_PrintNow(char *str);
 static void Time_SetNow(TimePara_S *para);
@@ -32,6 +33,7 @@ static void Time_SetNow(TimePara_S *para);
 
 Time_S Time = {
 	.init = Time_Init,
+	.getRst = Time_GetRstFlag,
 	.getNow = Time_GetNow,
 	.pirnNow = Time_PrintNow,
 	.setNow = Time_SetNow,
@@ -45,14 +47,13 @@ static void Time_Init(void){
 	TimePara_S para;
 	char timePrin[25];
 
-	if(HAL_RtcGetRstFlag(tPcf8563)){
-			Log.e("RTC has been reset,please check the battery!!\r\n");
-			HAL_RtcSetRstFlag(tPcf8563);
-	}
-	else{
+	if(Time_GetRstFlag()){
 		HAL_RtcGetDateTime(tPcf8563, (HAL_RtcPara_S *)&para);
 		Time_PrintNow(timePrin);
 		Log.d("RTC init finish!! Time now is %s\r\n", timePrin);
+	}
+	else{
+		Log.e("RTC has been reset,please check the battery!!\r\n");
 	}
 }
 
@@ -74,11 +75,18 @@ static void Time_PrintNow(char *str){
 		para.year,para.month,para.day,para.hour,para.min,para.sec);
 }
 
+static bool Time_GetRstFlag(void){
+	return !(HAL_RtcGetRstFlag(tPcf8563));
+}
+
 static void Time_SetNow(TimePara_S *para){
 	if(para == null)
 		return;
 
+	/* 设置时间 */
 	HAL_RtcSetDateTime(tPcf8563, para);
+	/* 复位时间重置标志位 */
+	HAL_RtcSetRstFlag(tPcf8563);
 }
 
 

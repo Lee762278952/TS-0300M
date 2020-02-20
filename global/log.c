@@ -20,7 +20,7 @@
  
 /* GLOBAL */
 #include "global_config.h"
-#include "debug.h"
+#include "log.h"
 
 #include "stdarg.h"
 
@@ -35,8 +35,6 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-
- 
 #define DEBUG_TASK_PRIORITY 				(3)
 #define DEBUG_TASK_STACK_SIZE  				(1024)
 
@@ -46,6 +44,8 @@
 
 #define CMD_DEBUG_MODE						"debug"
 #define CMD_MEM								"mem"
+
+#define DEBUG_TICK_COUNT					(xTaskGetTickCount()/1000)
 
 typedef enum {
 	tDebug = 0,
@@ -138,7 +138,7 @@ static void Log_Init(void){
 }
 
 static void Log_Debug(const char *fmt_s, ...){
-	printf("[%d] D/ ",xTaskGetTickCount()/1000);
+	printf("[%d] D/ ",DEBUG_TICK_COUNT);
 	va_list args;       
 	va_start(args,fmt_s); 
 	vprintf(fmt_s,args); 
@@ -146,7 +146,7 @@ static void Log_Debug(const char *fmt_s, ...){
 }
 
 static void Log_Information(const char *fmt_s, ...){
-	printf("[%d] I/ ",xTaskGetTickCount()/1000);
+	printf("[%d] I/ ",DEBUG_TICK_COUNT);
 	va_list args;       
 	va_start(args,fmt_s); 
 	vprintf(fmt_s,args); 
@@ -154,7 +154,7 @@ static void Log_Information(const char *fmt_s, ...){
 }
 
 static void Log_Error(const char *fmt_s, ...){
-	printf("\r\n[%d] E/ ",xTaskGetTickCount()/1000);
+	printf("\r\n[%d] E/ ",DEBUG_TICK_COUNT);
 	va_list args;       
 	va_start(args,fmt_s); 
 	vprintf(fmt_s,args); 

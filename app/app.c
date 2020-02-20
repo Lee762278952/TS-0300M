@@ -99,8 +99,8 @@ int main(void)
 */
 static void App_LauncherTask(void *pvParameters)
 {
-//	taskENTER_CRITICAL();	
-
+	taskENTER_CRITICAL();	
+	
 	Log.init();
 
 	Database.init();
@@ -110,18 +110,20 @@ static void App_LauncherTask(void *pvParameters)
 	Network.init();
 	
     UsbDisk.init();
-	
-	Time.init();
 
-    Camera.init();
+	Screen.init();
 	
-//	taskEXIT_CRITICAL();	
+    Camera.init();
+
+	Time.init();
+	
+	taskEXIT_CRITICAL();	
 
     Log.d("Tasks is being launch.....\r\n");
 	
 	Conference.launch();
 	
-    ExternalCtrl.launch();
+  	ExternalCtrl.launch();
 
 	WiredUnit.launch();
 

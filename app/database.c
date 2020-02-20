@@ -20,7 +20,7 @@
 
 /* API */
 #include "ram.h"
-#include "debug.h"
+#include "log.h"
 
 /* APP */
 #include "conference.h"

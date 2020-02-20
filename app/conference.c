@@ -60,6 +60,12 @@
 #define WIRED_CMD(_type,_ph,_pl)						( 0x80000000 | (_type << 16) | (_ph << 8) | _pl)
 #define WIFI_CMD(_cmd,_ph,_pl)							( 0x40000000 | (_cmd << 16) | (_ph << 8) | _pl)
 
+/* 单元在线数量 */
+#define WIRED_ONLINE_NUM								(OnlineNum.wiredChm + OnlineNum.wiredRps)
+#define WIFI_ONLINE_NUM									(OnlineNum.wifiChm + OnlineNum.wifiRps)
+#define UNIT_ONLINE_NUM 								(WIRED_ONLINE_NUM + WIFI_ONLINE_NUM)
+								
+
 #if 0
 /* 判断投票模式是否需要签到 */
 #define IS_VOTE_NEED_SIGN(_mode)						(_mode == Key3First_Sign_vote 		 || _mode == Key3Last_Sign_vote 		||   	\
@@ -311,7 +317,6 @@ static void Conference_Launch(void)
     /* 音频录放状态监听 */
     Audio.setListener(Conference_AudioStateListener);
 
-
     /* 从数据库获取并初始化会议参数 */
     SysInfo.config = (SysCfg_S *)Database.getInstance(kType_Database_SysCfg);
 
@@ -327,9 +332,18 @@ static void Conference_Launch(void)
         UnitInfo.wifi[id].config = &unitCfg[id];
     }
 
+	/* 检查RTC电池 */
+	if(!Time.getRst())
+		Conference_ScreenPageSwitch(SP_BATTERY_ERR);
+	else
+		Conference_ScreenPageSwitch(SP_WELCOME);
+	
+
     /* 初始化定时任务计时器 */
     TimingTask = xTimerCreate("TimingTask",TIMING_TASK_INTERVAL,pdTRUE,null,Conference_TimingTask);
 
+
+	/* 启动会议主机主处理任务 */
     if (xTaskCreate(Conference_NoticeProcessTask, "NoticeProcessTask", CONFERENCE_TASK_STACK_SIZE, null, CONFERENCE_TASK_PRIORITY, null) != pdPASS) {
         Log.e("create host task error\r\n");
     }
@@ -396,6 +410,9 @@ static void Conference_NoticeProcessTask(void *pvParameters)
             /* 通知来源为屏幕控制 */
             Conference_ScreenMessageProcess(notify);
         }
+		else if(notify->nSrc & kType_NotiSrc_SlaveMcu){
+			/* 通知来源为从单片机 */
+		}
         FREE(notify);
     }
 }
@@ -585,6 +602,7 @@ static void Conference_MessageProcess(Notify_S *notify)
             }
             break;
 
+			/* ID重复 */
             case ID_DUPICATE: {
                 uint16_t repeatId = para[2];
 
@@ -600,18 +618,48 @@ static void Conference_MessageProcess(Notify_S *notify)
                 }
             }
             break;
+			
+			/* 单元机呼叫服务 */
+			case SERVICE_TEA:
+			case SERVICE_PAPER_PEN:
+			case SERVICE_ARTIFICIAL:
+			case SERVICE_COFFEE:	
+			case SERVICE_FLOWER:
+			case SERVICE_MICPHONE:
+			case SERVICE_RESERVED_1:
+			case SERVICE_RESERVED_2:{
+				ExternalCtrl.transmit(id,Protocol.conference(&confProt,id,BASIC_MSG,CONFERENCE_MODE,cmd,null,null));
+			}break;
             }
         }
         break;
         /* 签到模式 0x01 */
         case SIGN_MODE: {
             switch(cmd) {
-            /* 进入签到模式 */
+            /* 进入签到模式(控制端发起) */
             case START_SIGN_MODE: {
                 SysInfo.state.totalSignNum = (uint16_t)((para[3] << 8) | para[4]);
                 SysInfo.state.currentSignNum = 0;
 
                 Conference_ChangeSysMode(kMode_Sign);
+            }
+            break;
+			/* 进入签到模式(主席单元发起) */
+			case DEV_START_SIGN_MODE:{
+				SysInfo.state.totalSignNum = (uint16_t)(UNIT_ONLINE_NUM);
+                SysInfo.state.currentSignNum = 0;
+
+				Conference_ChangeSysMode(kMode_Sign);
+			}
+			break;
+			/* 结束签到(控制端发起) */
+            case END_SIGN_MODE: 
+			/* 结束签到(主席单元发起) */
+			case DEV_END_SIGN_MODE:
+			{
+                WiredUnit.transmit(Protocol.conference(&confProt,WHOLE_BROADCAST_ID,BASIC_MSG,SIGN_MODE,END_SIGN_MODE,null,null));
+                WifiUnit.transmit(kMode_Wifi_Multicast,Protocol.wifiUnit(&wifiProt,0,EnterSignMode_MtoU_G,1,null));
+                Conference_ChangeSysMode(kMode_Conference);
             }
             break;
             /* 单元签到 */
@@ -637,14 +685,34 @@ static void Conference_MessageProcess(Notify_S *notify)
                 }
             }
             break;
-            /* 结束签到 */
-            case END_SIGN_MODE: {
-                WiredUnit.transmit(Protocol.conference(&confProt,WHOLE_BROADCAST_ID,BASIC_MSG,SIGN_MODE,END_SIGN_MODE,null,null));
-                WifiUnit.transmit(kMode_Wifi_Multicast,Protocol.wifiUnit(&wifiProt,0,EnterSignMode_MtoU_G,1,null));
-                Conference_ChangeSysMode(kMode_Conference);
-            }
-            break;
-
+			/* 允许签到 */
+			case SIGN_ENABLE:{
+				if(id == 0xFFF1){
+					SysInfo.config->signEn = ENABLE;
+				}
+				else{
+					/* id范围判断设备类型 */
+	                if((id > WIFI_UNIT_START_ID && id <= (WIFI_ID(WIFI_UNIT_MAX_ONLINE_NUM))))
+						WifiUnit.transmit(kMode_Wifi_Unitcast,Protocol.wifiUnit(&wifiProt,id - WIFI_UNIT_START_ID,EnableSignOrNot_MtoU_D,0,null));
+	                else if(id >= 1 && id <= WIRED_UNIT_MAX_ONLINE_NUM)
+						WiredUnit.transmit(Protocol.conference(&confProt,id,BASIC_MSG,SIGN_MODE,SIGN_ENABLE,null,null));
+	                    
+				}
+			}
+			break;
+			/* 禁止签到 */
+			case SIGN_DISABLE:{
+				if(id == 0xFFF1){
+					SysInfo.config->signEn = DISABLE;
+				}else{
+					/* id范围判断设备类型 */
+	                if((id > WIFI_UNIT_START_ID && id <= (WIFI_ID(WIFI_UNIT_MAX_ONLINE_NUM))))
+						WifiUnit.transmit(kMode_Wifi_Unitcast,Protocol.wifiUnit(&wifiProt,id - WIFI_UNIT_START_ID,EnableSignOrNot_MtoU_D,1,null));
+	                else if(id >= 1 && id <= WIRED_UNIT_MAX_ONLINE_NUM)
+						WiredUnit.transmit(Protocol.conference(&confProt,id,BASIC_MSG,SIGN_MODE,SIGN_DISABLE,null,null));
+				}
+			}
+			break;
             /* 补充签到 */
             case SUPPLEMENT_SIGN: {
                 /* 有线单元补充签到 */
@@ -658,7 +726,6 @@ static void Conference_MessageProcess(Notify_S *notify)
                 }
             }
             break;
-
             /* 单元应答补充签到 */
             case UNIT_SUPPLEMENT_SIGN: {
                 if((notify->nSrc & kType_NotiSrc_WiredUnit) && !UnitInfo.wired[id].sign) {
@@ -2181,7 +2248,8 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
             break;
         case 0x20:  //屏发来背景音乐音量
             break;
-        case 0x3A: { //系统设置
+		/* 系统设置 */
+        case 0x3A: { 
             switch(cmd) {
             /* 语言选择 */
             case 0x01: {
@@ -2200,7 +2268,6 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
                 mask = SysInfo.config->mask;
                 gw = SysInfo.config->gateWay;
 
-
                 /* 切换页面 */
                 Conference_ScreenPageSwitch(SP_LOCAL_IP);
 
@@ -2214,14 +2281,10 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
                 Screen.transWithExData(Protocol.screen(&screenProt,tType_Screen_CfgReg,SVR_NETMASK_ADDR),15,exData);
 
                 sprintf((char *)&exData[0],"%d",SysInfo.config->port);
-                Screen.transWithExData(Protocol.screen(&screenProt,tType_Screen_CfgReg,SVR_PORT),5,exData);
+                Screen.transWithExData(Protocol.screen(&screenProt,tType_Screen_CfgReg,SVR_PORT),6,exData);
 
             }
             break;
-
-            /* 恢复出厂设置 */
-            case 0x03: {
-            } break;
 
             /* 显示设置-亮度调节 */
             case 0x04: {
@@ -2233,10 +2296,6 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
                 Screen.transWithExData(Protocol.screen(&screenProt,tType_Screen_CfgReg,SVR_BRIGHTNESS),2,exData);
             }
             break;
-
-            /* 编ID模式 */
-//            case 0x05:{
-//			} break;
 
             /* 音量调节 */
             case 0x06: {
@@ -2267,7 +2326,7 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
         break;
 
         /* 屏发来录音处理按键 */
-        case 0x3B:
+        case 0x3B:{
             switch(cmd) {
             case 0x00://上一曲
                 Audio.previous();
@@ -2317,7 +2376,8 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
                 break;
 
             }
-            break;
+        }
+		break;
 
         /* 关无线单元 & 恢复默认 */
         case 0x3C:
@@ -2342,8 +2402,10 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
 
         case 0x40: //屏发过来语言选择
             break;
-        case 0x41://屏发来的下传功能设置
-            break;
+		/* 屏发来的下传功能设置 */
+        case 0x41:{
+			
+        }break;
 		/* 屏发过来请求更新屏幕当前亮度值的 */
         case 0x44:{
 			if(cmd >= 0 && cmd <= 64){
@@ -2460,6 +2522,7 @@ static void Conference_ScreenMessageProcess(Notify_S *notify)
     }
 
 }
+
 
 /**
 * @Name  		Conference_SignInstruction
@@ -3442,7 +3505,7 @@ static void Conference_ChangeSysMode(SysMode_EN mode)
     	如果当前是“非会议模式”下，则除了会议模式别的模式都不能切换
     (换句话说在非会议模式[EditID,Sign,Vote]下，必须先结束该模式，切换到
     会议模式[conference]，才可以再切换成别的非会议模式) */
-//    ERR_CHECK(!(SysInfo.state.sysMode != kMode_Conference && mode != kMode_Conference), return);
+    ERR_CHECK(!(SysInfo.state.sysMode != kMode_Conference && mode != kMode_Conference), return);
 
     switch(mode) {
     case kMode_Conference: {

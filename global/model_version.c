@@ -19,7 +19,7 @@
 #include <stdint.h>
 
 #include "global_config.h"
-#include "debug.h"
+#include "log.h"
 
 /*******************************************************************************
  * Definitions

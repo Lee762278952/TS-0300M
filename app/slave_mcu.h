@@ -1,26 +1,24 @@
-#ifndef __TIME_H_
-#define __TIME_H_
+#ifndef _SLAVE_MCU_H__
+#define _SLAVE_MCU_H__
 
-#include "hal_rtc.h"
-
+#include "protocol.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-
-typedef HAL_RtcPara_S TimePara_S;
-
-
+ /* 从单片机API数据结构 */
 typedef struct {
 	void (*init)(void);
-	bool (*getRst)(void);
-	void (*getNow)(TimePara_S *para);
-	void (*pirnNow)(char *str);
-	void (*setNow)(TimePara_S *para);
-}Time_S;
+	void (*launch)(void);
+	void (*transWithExData)(ConfProtocol_S *prot, uint16_t exLen, uint8_t *exData);
+	void (*transmit)(ConfProtocol_S *prot);
+}SlaveMcu_S;
+
+
 /*******************************************************************************
  * API
  ******************************************************************************/
-extern Time_S Time;
+extern SlaveMcu_S SlaveMcu;
+
 #endif
 
 

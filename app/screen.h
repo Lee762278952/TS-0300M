@@ -5,8 +5,9 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
- /* 无线单元设备API数据结构 */
+ /* 屏幕API数据结构 */
 typedef struct {
+	void (*init)(void);
 	void (*launch)(void);
 	void (*transWithExData)(ScreenProtocol_S *prot, uint16_t exLen, uint8_t *exData);
 	void (*transmit)(ScreenProtocol_S *prot);

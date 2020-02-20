@@ -116,7 +116,17 @@
 #define CHM_APPLY_ACCESS_SYS						(0x27)
 #define UNIT_ACCESS_SYS								(0x28)
 #define UNIT_OFFLINE								(0x40)
+#define SERVICE_TEA									(0x50)
+#define SERVICE_PAPER_PEN							(0x51)
+#define SERVICE_ARTIFICIAL							(0x52)
+#define SERVICE_COFFEE								(0x53)
+#define SERVICE_FLOWER								(0x54)
+#define SERVICE_MICPHONE							(0x55)
+#define SERVICE_RESERVED_1							(0x56)
+#define SERVICE_RESERVED_2							(0x57)
 #define DISAGREE_OPEN_MIC							(0x5C)
+
+
 
 /* Ç°ÖÃ×Ö¶Î 	BASIC_MSG  SIGN_MODE */
 #define START_SIGN_MODE								(0x01)

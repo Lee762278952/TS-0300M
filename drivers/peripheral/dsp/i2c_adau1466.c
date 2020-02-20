@@ -21,7 +21,7 @@
 #include "adau1466_2_IC_1_REG.h"
 #endif
 
-#include "debug.h"
+#include "log.h"
 
 #define EXAMPLE_DELAY_COUNT 					8000000
 

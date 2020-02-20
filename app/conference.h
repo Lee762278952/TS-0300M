@@ -17,8 +17,8 @@ typedef enum {
     kMode_Sign,
     kMode_Vote,
     kMode_EditID,
-    kMode_DevSign,
-    kMode_DevVote,
+//    kMode_DevSign,
+//    kMode_DevVote,
 } SysMode_EN;
 
 /* »°Í²Ä£Ê½ */
@@ -40,6 +40,7 @@ typedef enum {
     kType_NotiSrc_PC			= (1<<3),
     kType_NotiSrc_UartCtrl		= (1<<4),
     kType_NotiSrc_ScreenCtrl 	= (1<<5),
+    kType_NotiSrc_SlaveMcu      = (1<<6),
 } NotifySrcType_EN;
 
 typedef NotifySrcType_EN InstructDest_EN;
