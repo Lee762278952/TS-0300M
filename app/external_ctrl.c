@@ -65,8 +65,8 @@
 /* 协议指令数据缓存大小 */
 #define EXTERNAL_CTRL_DATA_RECEIVE_BUF_SIZE			(260)
 
-/* 全数字会议协议数据包最小长度 */
-#define CTRL_CMD_MIN_LEN							(13)
+/* 议协议数据包最小长度 */
+#define CTRL_CMD_MIN_LEN							(CONF_PROT_MIN_LEN)
 
 /* 最大分包数 */
 #define DATA_PACK_MAX_NUM							(EXTERNAL_CTRL_DATA_RECEIVE_BUF_SIZE / CTRL_CMD_MIN_LEN)
@@ -93,26 +93,27 @@ typedef struct {
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
+/* LAUNCHER调用 */
+static void ExternalCtrl_ConfigTask(void *pvParameters);
+static void PcCtrl_ProcessTask(void *pvParameters);
+static void WebCtrl_ProcessTask(void *pvParameters);
+static void UartCtrl_ProcessTask(void *pvParameters);
+
 /* API调用 */
-static void ExternalCtrl_Launch(void);
+//static void ExternalCtrl_Launch(void);
 static void ExternalCtrl_Transmit(EXE_DEST dest, ConfProtocol_S *prot);
 static void ExternalCtrl_TransmitWithExData(EXE_DEST dest, ConfProtocol_S *prot, uint16_t exLen, uint8_t *exData);
 static void ExternalCtrl_TransmitByByte(EXE_DEST dest, uint8_t *data, uint16_t len);
 static bool ExternalCtrl_ConnectState(EXE_DEST dest);
 
 /* 内部调用 */
-static void ExternalCtrl_LaunchTask(void *pvParameters);
+
 static void ExternalCtrl_EthStaListener(bool sta);
 static DataPack_S *ExternalCtrl_FetchDataFromNetBuf(Network_DataBuf_S *taskBuf);
 static void ExternalCtrl_NotifyConference(NotifySrcType_EN nSrc, ConfProtocol_S *prot);
 static void ExternalCtrl_NotifyConferenceWithExData(NotifySrcType_EN nSrc, ConfProtocol_S *prot, uint16_t exLen, uint8_t *exData);
 static void ExternalCtrl_ReplyHeartbeat(EXE_DEST dest);
 static void ExternalCtrl_ReplyQuery(EXE_DEST dest, uint8_t para);
-
-static void PcCtrl_ProcessTask(void *pvParameters);
-static void WebCtrl_ProcessTask(void *pvParameters);
-static void UartCtrl_ProcessTask(void *pvParameters);
-
 static void UartCtrl_UartCallback(uint8_t count,void *para);
 
 /*******************************************************************************
@@ -158,18 +159,75 @@ static uint8_t UartCount = 0;
 static uint8_t *UartBuf;
 
 /* 485、232电源控制GPIO句柄 */
-static HAL_GpioIndex SerialPower;
+static HAL_GpioHandler SerialPower;
 
+
+/*******************************************************************************
+ * Task & API
+ ******************************************************************************/
+
+static AppTask_S ConfigTask = {
+	.task = ExternalCtrl_ConfigTask,
+	.name = "ExternalCtrl.Config",	
+	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
+	.para = null,
+	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
+	.handle = null
+};
+
+
+static AppTask_S PcCtrlProcess = {
+	.task = PcCtrl_ProcessTask,
+	.name = "ExternalCtrl.PcCtrlProcess",	
+	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
+	.para = null,
+	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
+	.handle = null
+};
+
+static AppTask_S WebCtrlProcess = {
+	.task = WebCtrl_ProcessTask,
+	.name = "ExternalCtrl.WebCtrlProcess",	
+	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
+	.para = null,
+	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
+	.handle = null
+};
+
+static AppTask_S UartCtrlProcess = {
+	.task = UartCtrl_ProcessTask,
+	.name = "ExternalCtrl.UartCtrlProcess",	
+	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
+	.para = null,
+	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
+	.handle = null
+};
+
+
+static AppTask_S *FuncTask[] = {&PcCtrlProcess, &WebCtrlProcess, &UartCtrlProcess};
+
+
+static AppLauncher_S Launcher = {
+	.init = null,
+	.configTask = &ConfigTask,
+	.funcNum  = 3,
+	.funcTask = FuncTask,
+};
 
 
 ExternalCtrl_S ExternalCtrl = {
-    .launch = ExternalCtrl_Launch,
+//    .launch = ExternalCtrl_Launch,
+	.launcher = &Launcher,
+
     .transmit = ExternalCtrl_Transmit,
     .transWithExData = ExternalCtrl_TransmitWithExData,
     .transByByte = ExternalCtrl_TransmitByByte,
     .connectSta = ExternalCtrl_ConnectState,
 
 };
+
+
+
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -182,16 +240,16 @@ ExternalCtrl_S ExternalCtrl = {
 *
 * @return
 */
-static void ExternalCtrl_Launch(void)
-{
-    if (xTaskCreate(ExternalCtrl_LaunchTask, "ExternalCtrlLaunchTask", EXTERNAL_CTRL_TASK_STACK_SIZE, null, EXTERNAL_CTRL_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create launch task error\r\n");
-    }
-}
+//static void ExternalCtrl_Launch(void)
+//{
+//    if (xTaskCreate(ExternalCtrl_ConfigTask, "ExternalCtrlLaunchTask", EXTERNAL_CTRL_TASK_STACK_SIZE, null, EXTERNAL_CTRL_TASK_PRIORITY, null) != pdPASS) {
+//        Log.e("create launch task error\r\n");
+//    }
+//}
 
 
 /**
-* @Name  		ExternalCtrl_LaunchTask
+* @Name  		ExternalCtrl_ConfigTask
 * @Author  		KT
 * @Description
 * @para
@@ -199,7 +257,7 @@ static void ExternalCtrl_Launch(void)
 *
 * @return
 */
-static void ExternalCtrl_LaunchTask(void *pvParameters)
+static void ExternalCtrl_ConfigTask(void *pvParameters)
 {
     Network_EthPara_S *ethPara;
     SysCfg_S *sysCfg;
@@ -237,22 +295,11 @@ static void ExternalCtrl_LaunchTask(void *pvParameters)
     UartRecvSemaphore = xSemaphoreCreateBinary();
 
 
-    /* 启动PC处理线程 */
-    if (xTaskCreate(PcCtrl_ProcessTask, "PCProcessTask", EXTERNAL_CTRL_TASK_STACK_SIZE, null, EXTERNAL_CTRL_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create PC data receive task error\r\n");
-    }
+	isPcCtrlEnable = isWebCtrlEnable = false;
 
-    /* 启动WEB处理线程 */
-    if (xTaskCreate(WebCtrl_ProcessTask, "WEBProcessTask", EXTERNAL_CTRL_TASK_STACK_SIZE, null, EXTERNAL_CTRL_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create WEB data receive task error\r\n");
-    }
 
-    /* 启动UART处理线程 */
-    if (xTaskCreate(UartCtrl_ProcessTask, "UartProcessTask", EXTERNAL_CTRL_TASK_STACK_SIZE, null, EXTERNAL_CTRL_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create UART data receive task error\r\n");
-    }
-
-    isPcCtrlEnable = isWebCtrlEnable = false;
+	Log.i("External control configuration finish ... \r\n");
+    
 
     vTaskDelete(null);
 }
@@ -612,9 +659,11 @@ static void PcCtrl_ProcessTask(void *pvParameters)
 
     uint32_t index;
 
+	Log.i("PC control process task start!!\r\n");
+
 	 /* 等待网络连接 */
     while(!isEthConnected) {
-        DELAY(200);
+        DELAY(500);
     }
 
     taskBuf	= MALLOC(sizeof(Network_DataBuf_S));
@@ -628,8 +677,6 @@ static void PcCtrl_ProcessTask(void *pvParameters)
     taskPara->type = tServer;
     taskPara->tcpListener = PcCtrl_TcpStaListener;
     pcNetTaskHandler = Network.creatTask(NETWORK_ENET_TYPE,tTcp,taskPara);
-
-    Log.d("PC control process task start!!\r\n");
 
     while(1) {
         Network.receive(pcNetTaskHandler,taskBuf,MAX_NUM);
@@ -683,9 +730,11 @@ static void WebCtrl_ProcessTask(void *pvParameters)
     DataPack_S *dataPack;
     uint32_t index;
 
+	Log.i("WEB control process task start!!\r\n");
+
 	 /* 等待网络连接 */
     while(!isEthConnected) {
-        DELAY(200);
+        DELAY(500);
     }
 
     taskBuf	= MALLOC(sizeof(Network_DataBuf_S));
@@ -714,8 +763,6 @@ static void WebCtrl_ProcessTask(void *pvParameters)
 
     /* 初始化网络任务 */
     webNetTaskHandler = Network.creatTask(NETWORK_ENET_TYPE,tHttp,taskPara);
-
-    Log.d("WEB control process task start!!\r\n");
 
     while(1) {
         Network.receive(webNetTaskHandler,taskBuf,MAX_NUM);
@@ -753,6 +800,8 @@ static void UartCtrl_ProcessTask(void *pvParameters)
     uint32_t index;
 
 
+	Log.i("Uart control process task start!!\r\n");
+
     /* 控制IO打开电源 */
     SerialPower = HAL_GpioInit(GPIO3, 3, kGPIO_DigitalOutput, null, (gpio_interrupt_mode_t)null);
     HAL_SetGpioLevel(SerialPower, 0);
@@ -773,8 +822,7 @@ static void UartCtrl_ProcessTask(void *pvParameters)
     HAL_UartInit(UartCtrltHandler, config);
     HAL_UartSetCallback(UartCtrltHandler, UartBuf, EXTERNAL_CTRL_DATA_RECEIVE_BUF_SIZE, UartCtrl_UartCallback, null);
 
-    Log.d("Uart control process task start!!\r\n");
-
+   
     while(1) {
 //		DELAY(100);
 //		if(UartCount < 13)

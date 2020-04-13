@@ -116,6 +116,18 @@ static void HAL_AudCodecRead(HAL_AudCodec_S *audCodec,uint8_t reg,uint16_t* para
 }
 #endif
 
+status_t HAL_AudCodeWriteReg(HAL_AudCodecType_EN type,uint8_t reg,uint16_t para){
+	HAL_AudCodec_S *audCodec;
+
+    ERR_CHECK(((uint8_t)type >=0 && (uint8_t)type < AUD_CODEC_DRIVERS_TOTAL_NUM), return kStatus_Fail);
+    audCodec = AudCodec_drivers[type];
+
+	HAL_AudCodecWrite(audCodec,reg, para);
+
+	return kStatus_Success;
+}
+
+
 status_t HAL_AudCodecInit(HAL_AudCodecType_EN type)
 {
     HAL_AudCodec_S *audCodec;
@@ -140,8 +152,8 @@ status_t HAL_AudCodecInit(HAL_AudCodecType_EN type)
         HAL_AudCodecWrite(audCodec,0x0E, 0x008);
         HAL_AudCodecWrite(audCodec,0x0F, 0x0FF);
         HAL_AudCodecWrite(audCodec,0x10, 0x1FF);
-        HAL_AudCodecWrite(audCodec,0x2C, 0x033);
-		HAL_AudCodecWrite(audCodec,0x2D, 0x115); //模拟音量放大
+        HAL_AudCodecWrite(audCodec,0x2C, 0x030);
+		HAL_AudCodecWrite(audCodec,0x2D, 0x110); //模拟音量放大
         HAL_AudCodecWrite(audCodec,0x2F, 0x050);
         HAL_AudCodecWrite(audCodec,0x30, 0x050);
         HAL_AudCodecWrite(audCodec,0x31, 0x002);
@@ -162,7 +174,8 @@ status_t HAL_AudCodecInit(HAL_AudCodecType_EN type)
         HAL_AudCodecWrite(audCodec,0x04, 0x010);
         HAL_AudCodecWrite(audCodec,0x06, 0x008);
         HAL_AudCodecWrite(audCodec,0x0A, 0x008);
-        HAL_AudCodecWrite(audCodec,0x0B, 0x1FF);
+        HAL_AudCodecWrite(audCodec,0x0B, 0x1FF);  
+		HAL_AudCodecWrite(audCodec,0x0C, 0x1FF);  
         HAL_AudCodecWrite(audCodec,0x0E, 0x008);
         HAL_AudCodecWrite(audCodec,0x0F, 0x1FF);
         HAL_AudCodecWrite(audCodec,0x2C, 0x003);

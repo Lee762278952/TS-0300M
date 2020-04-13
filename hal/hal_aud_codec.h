@@ -35,6 +35,7 @@ typedef enum {
  * API
  ******************************************************************************/
 status_t HAL_AudCodecInit(HAL_AudCodecType_EN type);
+status_t HAL_AudCodeWriteReg(HAL_AudCodecType_EN type,uint8_t reg,uint16_t para);
 
 
 

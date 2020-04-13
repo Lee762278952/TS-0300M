@@ -58,13 +58,17 @@
 #define DATABASE_SAVE_TIME								(500)
 
 /* DATABASE∂¡»°FLASHºÏ—ÈÃÿ’˜¬Î£®4 byte£© */
-#define DATQBASE_FLASH_FEATURE							"DB00"
+#define DATQBASE_FLASH_FEATURE							"DB01"
 
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-/* API */
+/* LAUNCHER */
 static void Database_Init(void);
+static void Database_SaverTask(void *pvParameters);
+
+/* API */
+//static void Database_Launch(void);
 static void Database_Save(void);
 static void Database_SaveSpecify(uint8_t type,uint16_t id);
 static uint8_t *Database_GetInstance(DatabaseType_EN type);
@@ -72,7 +76,7 @@ static void Database_RestoreDefault(uint8_t type);
 
 /* INTERNAL */
 static void Database_Saver(uint8_t type);
-static void Database_SaverTask(void *pvParameters);
+
 
 /*******************************************************************************
  * Variables
@@ -91,13 +95,42 @@ static UnitCfg_S *WifiCfg = (UnitCfg_S *)WifiCfgSpace;
 static UnitCfg_S *WiredCfg = (UnitCfg_S *)WiredCfgSpace;
 
 
+
+
+
+/*******************************************************************************
+ * Task & API
+ ******************************************************************************/
+
+static AppTask_S Saver = {
+	.task = Database_SaverTask,
+	.name = "Database.Saver",	
+	.stack = DATABASE_TASK_STACK_SIZE,
+	.para = null,
+	.prio = DATABASE_TASK_PRIORITY,
+	.handle = null
+};
+
+static AppTask_S *FuncTask[] = {&Saver};
+
+
+static AppLauncher_S Launcher = {
+	.init = Database_Init,
+	.configTask = null,
+	.funcNum  = 1,
+	.funcTask = FuncTask,
+};
+
+/* API */
 Database_S Database = {
-    .init = Database_Init,
+	.launcher = &Launcher,
+
     .save = Database_Save,
     .saveSpecify = Database_SaveSpecify,
     .getInstance = Database_GetInstance,
     .restoreDef = Database_RestoreDefault,
 };
+
 
 /*******************************************************************************
  * Code
@@ -107,8 +140,6 @@ static void Database_Init(void)
     uint8_t *txBuf,*rxBuf;
     uint16_t i;
 
-    Log.d("Database init start!\r\n");
-	
 	if(FLASH_SECTOR_SIZE % sizeof(UnitCfg_S)){
 		Log.e("Warnint:UnitCfg_S must Can be divisible by FLASH_SECTOR_SIZE!!");
 	}
@@ -149,17 +180,15 @@ static void Database_Init(void)
         Database_Saver(kType_Database_Whole);
     }
 
-    if (xTaskCreate(Database_SaverTask, "SaverTask", DATABASE_TASK_STACK_SIZE, null, DATABASE_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("save task error\r\n");
-    }
+    
 
-//	Log.d("size = %d addr = 0x%X\r\n",sizeof(SysDataSpace),SysDataSpace);
-//	Log.d("size = %d addr = 0x%X\r\n",sizeof(WiredCfgSpace),WiredCfgSpace);
-//	Log.d("size = %d addr = 0x%X\r\n",sizeof(WifiCfgSpace),WifiCfgSpace);
 }
+
 
 static void Database_SaverTask(void *pvParameters)
 {
+
+	Log.i("Database saver task start!!\r\n");
 
     while(1) {
         xSemaphoreTake(SaveSemap, MAX_NUM);
@@ -279,9 +308,9 @@ static void Database_RestoreDefault(uint8_t type)
 
         for(i = 0; i < 22; i++) {
             SysCfg->dsp[i].vol = 0x1F;
-            SysCfg->dsp[i].downTrans = 0x00;
+//            SysCfg->dsp[i].downTrans = 0x00;
             SysCfg->dsp[i].dly = 0x00;
-            memset(SysCfg->dsp[i].eqVol,0x0C,10);
+            memset(SysCfg->dsp[i].eqVol,0x0A,10);
             memset(SysCfg->dsp[i].inputVol,0x1F,7);
         }
     }

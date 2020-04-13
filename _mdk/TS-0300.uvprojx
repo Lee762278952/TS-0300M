@@ -341,7 +341,7 @@
 </MiscControls>
               <Define>DEBUG,USB_STACK_FREERTOS,XIP_EXTERNAL_FLASH=1, XIP_BOOT_HEADER_ENABLE=1, CPU_MIMXRT1062DVL6A, FSL_RTOS_FREE_RTOS, ARM_MATH_CM7,FSL_FEATURE_PHYKSZ8081_USE_RMII50M_MODE, USE_RTOS=1,HTTPSRV_CFG_WEBSOCKET_ENABLED=1, FSL_RTOS_FREE_RTOS,SDK_I2C_BASED_COMPONENT_USED=1</Define>
               <Undefine></Undefine>
-              <IncludePath>..\_project;..\xip;..\app;..\global;..\api;..\api\utilities;..\api\components;..\api\components\codec;..\api\components\lists;..\api\components\serial_manager;..\api\components\uart;..\amazon-freertos;..\amazon-freertos\lib\include;..\amazon-freertos\lib\include\private;..\amazon-freertos\lib\FreeRTOS\portable\RVDS\ARM_CM4F;..\CMSIS\Include;..\hal;..\drivers\sdk;..\drivers\peripheral;..\drivers\peripheral\net-phy;..\drivers\peripheral\dsp;..\drivers\startup;..\usb;..\usb\api;..\usb\host;..\usb\host\class;..\usb\include;..\usb\osa;..\usb\phy;..\usb\templates\config;..\fatfs;..\fatfs\fsl_usb_disk;..\lwip;..\lwip\opt;..\lwip\port;..\lwip\src;..\lwip\src\include;..\lwip\src\include\lwip\apps;..\lwip\src\apps\httpsrv;..\lwip\contrib\apps\udpecho</IncludePath>
+              <IncludePath>..\_project;..\xip;..\app;..\app\inc;..\global;..\amazon-freertos;..\amazon-freertos\lib\include;..\amazon-freertos\lib\include\private;..\amazon-freertos\lib\FreeRTOS\portable\RVDS\ARM_CM4F;..\CMSIS\Include;..\hal;..\drivers\sdk;..\drivers\peripheral;..\drivers\peripheral\net-phy;..\drivers\peripheral\dsp;..\drivers\startup;..\utilities;..\usb;..\usb\api;..\usb\host;..\usb\host\class;..\usb\include;..\usb\osa;..\usb\phy;..\usb\templates\config;..\fatfs;..\fatfs\fsl_usb_disk;..\lwip;..\lwip\opt;..\lwip\port;..\lwip\src;..\lwip\src\include;..\lwip\src\include\lwip\apps;..\lwip\src\apps\httpsrv;..\lwip\contrib\apps\udpecho;..\components\serial_manager</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -397,19 +397,9 @@
               <FilePath>..\app\app.c</FilePath>
             </File>
             <File>
-              <FileName>app.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\app.h</FilePath>
-            </File>
-            <File>
               <FileName>conference.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\conference.c</FilePath>
-            </File>
-            <File>
-              <FileName>conference.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\conference.h</FilePath>
             </File>
             <File>
               <FileName>wired_unit.c</FileName>
@@ -417,19 +407,9 @@
               <FilePath>..\app\wired_unit.c</FilePath>
             </File>
             <File>
-              <FileName>wired_unit.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\wired_unit.h</FilePath>
-            </File>
-            <File>
               <FileName>wifi_unit.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\wifi_unit.c</FilePath>
-            </File>
-            <File>
-              <FileName>wifi_unit.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\wifi_unit.h</FilePath>
             </File>
             <File>
               <FileName>external_ctrl.c</FileName>
@@ -437,19 +417,9 @@
               <FilePath>..\app\external_ctrl.c</FilePath>
             </File>
             <File>
-              <FileName>external_ctrl.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\external_ctrl.h</FilePath>
-            </File>
-            <File>
               <FileName>protocol.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\protocol.c</FilePath>
-            </File>
-            <File>
-              <FileName>protocol.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\protocol.h</FilePath>
             </File>
             <File>
               <FileName>screen.c</FileName>
@@ -457,19 +427,9 @@
               <FilePath>..\app\screen.c</FilePath>
             </File>
             <File>
-              <FileName>screen.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\screen.h</FilePath>
-            </File>
-            <File>
               <FileName>database.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\database.c</FilePath>
-            </File>
-            <File>
-              <FileName>database.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\database.h</FilePath>
             </File>
             <File>
               <FileName>camera.c</FileName>
@@ -477,19 +437,124 @@
               <FilePath>..\app\camera.c</FilePath>
             </File>
             <File>
-              <FileName>camera.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\camera.h</FilePath>
-            </File>
-            <File>
               <FileName>slave_mcu.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\slave_mcu.c</FilePath>
             </File>
             <File>
+              <FileName>audio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\audio.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_disk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\usb_disk.c</FilePath>
+            </File>
+            <File>
+              <FileName>dsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\dsp.c</FilePath>
+            </File>
+            <File>
+              <FileName>ram.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\ram.c</FilePath>
+            </File>
+            <File>
+              <FileName>time.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\time.c</FilePath>
+            </File>
+            <File>
+              <FileName>network.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\network.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app-inc</GroupName>
+          <Files>
+            <File>
+              <FileName>app.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\app.h</FilePath>
+            </File>
+            <File>
+              <FileName>audio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\audio.h</FilePath>
+            </File>
+            <File>
+              <FileName>camera.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\camera.h</FilePath>
+            </File>
+            <File>
+              <FileName>conference.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\conference.h</FilePath>
+            </File>
+            <File>
+              <FileName>database.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\database.h</FilePath>
+            </File>
+            <File>
+              <FileName>dsp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\dsp.h</FilePath>
+            </File>
+            <File>
+              <FileName>external_ctrl.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\external_ctrl.h</FilePath>
+            </File>
+            <File>
+              <FileName>network.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\network.h</FilePath>
+            </File>
+            <File>
+              <FileName>protocol.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\protocol.h</FilePath>
+            </File>
+            <File>
+              <FileName>ram.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\ram.h</FilePath>
+            </File>
+            <File>
+              <FileName>screen.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\screen.h</FilePath>
+            </File>
+            <File>
               <FileName>slave_mcu.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\app\slave_mcu.h</FilePath>
+              <FilePath>..\app\inc\slave_mcu.h</FilePath>
+            </File>
+            <File>
+              <FileName>time.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\time.h</FilePath>
+            </File>
+            <File>
+              <FileName>usb_disk.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\usb_disk.h</FilePath>
+            </File>
+            <File>
+              <FileName>wifi_unit.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\wifi_unit.h</FilePath>
+            </File>
+            <File>
+              <FileName>wired_unit.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\inc\wired_unit.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -570,117 +635,22 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>api</GroupName>
-          <Files>
-            <File>
-              <FileName>network.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\network.c</FilePath>
-            </File>
-            <File>
-              <FileName>network.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\network.h</FilePath>
-            </File>
-            <File>
-              <FileName>ram.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\ram.c</FilePath>
-            </File>
-            <File>
-              <FileName>ram.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\ram.h</FilePath>
-            </File>
-            <File>
-              <FileName>usb_disk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\usb_disk.c</FilePath>
-            </File>
-            <File>
-              <FileName>usb_disk.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\usb_disk.h</FilePath>
-            </File>
-            <File>
-              <FileName>audio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\audio.c</FilePath>
-            </File>
-            <File>
-              <FileName>audio.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\audio.h</FilePath>
-            </File>
-            <File>
-              <FileName>time.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\time.c</FilePath>
-            </File>
-            <File>
-              <FileName>time.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\time.h</FilePath>
-            </File>
-            <File>
-              <FileName>dsp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\dsp.c</FilePath>
-            </File>
-            <File>
-              <FileName>dsp.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\dsp.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>api-utilities</GroupName>
+          <GroupName>utilities</GroupName>
           <Files>
             <File>
               <FileName>data_queue.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\api\utilities\data_queue.c</FilePath>
-            </File>
-            <File>
-              <FileName>data_queue.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\utilities\data_queue.h</FilePath>
+              <FilePath>..\utilities\data_queue.c</FilePath>
             </File>
             <File>
               <FileName>data_stream.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\api\utilities\data_stream.c</FilePath>
-            </File>
-            <File>
-              <FileName>data_stream.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\utilities\data_stream.h</FilePath>
+              <FilePath>..\utilities\data_stream.c</FilePath>
             </File>
             <File>
               <FileName>fsl_assert.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\api\utilities\fsl_assert.c</FilePath>
-            </File>
-            <File>
-              <FileName>usb_device_config.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\utilities\usb_device_config.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>api-components</GroupName>
-          <Files>
-            <File>
-              <FileName>generic_list.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\api\components\lists\generic_list.c</FilePath>
-            </File>
-            <File>
-              <FileName>generic_list.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\api\components\lists\generic_list.h</FilePath>
+              <FilePath>..\utilities\fsl_assert.c</FilePath>
             </File>
           </Files>
         </Group>

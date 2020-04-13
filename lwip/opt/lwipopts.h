@@ -299,8 +299,8 @@ Some MCU allow computing and verifying the IP, UDP, TCP and ICMP checksums by ha
 
 #define TCPIP_MBOX_SIZE 32
 #define TCPIP_THREAD_STACKSIZE 1024
-#define TCPIP_THREAD_PRIO 14
-//#define TCPIP_THREAD_PRIO (configMAX_PRIORITIES - 1)
+//#define TCPIP_THREAD_PRIO 14
+#define TCPIP_THREAD_PRIO (configMAX_PRIORITIES - 1)
 
 /**
  * DEFAULT_RAW_RECVMBOX_SIZE: The mailbox size for the incoming packets on a

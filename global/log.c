@@ -146,11 +146,13 @@ static void Log_Debug(const char *fmt_s, ...){
 }
 
 static void Log_Information(const char *fmt_s, ...){
+	taskENTER_CRITICAL();
 	printf("[%d] I/ ",DEBUG_TICK_COUNT);
 	va_list args;       
 	va_start(args,fmt_s); 
 	vprintf(fmt_s,args); 
 	va_end(args);
+	taskEXIT_CRITICAL();
 }
 
 static void Log_Error(const char *fmt_s, ...){

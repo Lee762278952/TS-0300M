@@ -73,7 +73,7 @@
 /* 测试用 */
 #define WIFI_POLLING_NO_REPLY_OFFLINE_COUNT						(1200)
 #else
-#define WIFI_POLLING_NO_REPLY_OFFLINE_COUNT						(10)
+#define WIFI_POLLING_NO_REPLY_OFFLINE_COUNT						(4)
 #endif
 
 
@@ -89,17 +89,19 @@ typedef struct {
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
+/* LAUNCHER */
+static void WifiUnit_NetDataProcessTask(void *pvParameters);
+static void WifiUnit_NetDataTransmitTask(void *pvParameters);
+static void WifiUnit_ConfigTask(void *pvParameters);
+
 /* API调用 */
-static void WifiUnit_Launch(void);
+//static void WifiUnit_Launch(void);
 static void WifiUnit_NetDataTransmitWithExData(WifiSendMode_EN mode,WifiUnitProtocol_S *prot, uint16_t exLen, uint8_t *exData);
 static void WifiUnit_NetDataTransmit(WifiSendMode_EN mode,WifiUnitProtocol_S *prot);
 
 /* 内部调用 */
-static void WifiUnit_LaunchTask(void *pvParameters);
 static void WifiUnit_MacPhyIrqCallback(void *param);
-static void WifiUnit_NetDataProcessTask(void *pvParameters);
 static Network_DataBuf_S *WifiUnit_NetDataAnalysis(uint8_t *data);
-static void WifiUnit_NetDataTransmitTask(void *pvParameters);
 static void WifiUnit_AccessSystem(uint16_t id,Network_Mac_S *unitSrcMac,Network_Addr_S *unitSrcIp,UnitAttr_EN attr);
 static void WifiUnit_NotifyConferenceWithExData(WifiUnitProtocol_S *prot, uint16_t exLen, uint8_t *exData);
 static void WifiUnit_NotifyConference(WifiUnitProtocol_S *prot);
@@ -109,15 +111,16 @@ static void WifiUnit_PollingTimer(TimerHandle_t xTimer);
  * Variables
  ******************************************************************************/
 /* IO中断索引 */
-static HAL_GpioIndex MacPhyIrq;
+static HAL_GpioHandler MacPhyIrq;
 
 /* MAC，IP实例 */
 static NETWORK_MAC HostMac = HOST_MAC_DEF;
 static NETWORK_IP HostIP = HOST_IP_DEF;
-
-
 static NETWORK_IP MultiCastIp = MULTICAST_IP;
 static NETWORK_MAC MultiCastMac;
+
+static const NETWORK_MAC nullMac = {0x00,0x00,0x00,0x00,0x00,0x00};
+
 
 /* 接收信号量 */
 static SemaphoreHandle_t RecvSemaphore;
@@ -134,16 +137,61 @@ static TimerHandle_t wifiPollingTmr;
 static uint16_t pollingId = 0;
 
 
+/*******************************************************************************
+ * Task & API
+ ******************************************************************************/
+
+static AppTask_S ConfigTask = {
+	.task = WifiUnit_ConfigTask,
+	.name = "WifiUnit.Config",	
+	.stack = WIFI_UNIT_TASK_STACK_SIZE,
+	.para = null,
+	.prio = WIFI_UNIT_TASK_PRIORITY,
+	.handle = null
+};
+
+static AppTask_S NetDataProcess = {
+	.task = WifiUnit_NetDataProcessTask,
+	.name = "WifiUnit.NetDataProcess",	
+	.stack = WIFI_UNIT_TASK_STACK_SIZE,
+	.para = null,
+	.prio = WIFI_UNIT_TASK_PRIORITY,
+	.handle = null
+};
+
+static AppTask_S NetDataTransmit = {
+	.task = WifiUnit_NetDataTransmitTask,
+	.name = "WifiUnit.NetDataTransmit",	
+	.stack = WIFI_UNIT_TASK_STACK_SIZE,
+	.para = null,
+	.prio = WIFI_UNIT_TASK_PRIORITY,
+	.handle = null
+};
+
+static AppTask_S *FuncTask[] = {&NetDataProcess,&NetDataTransmit};
+
+static AppLauncher_S Launcher = {
+	.init = null,
+	.configTask = &ConfigTask,
+	.funcNum  = 2,
+	.funcTask = FuncTask,
+};
+
+
+/* API */
 WifiUnit_S WifiUnit = {
-    .launch = WifiUnit_Launch,
+	.launcher = &Launcher,
+
     .transmit = WifiUnit_NetDataTransmit,
     .transWithExData = WifiUnit_NetDataTransmitWithExData,
 };
 /*******************************************************************************
  * Code
  ******************************************************************************/
+
+
 /**
-* @Name  		WifiUnit_Launch
+* @Name  		WifiUnit_ConfigTask
 * @Author  		KT
 * @Description
 * @para
@@ -151,24 +199,7 @@ WifiUnit_S WifiUnit = {
 *
 * @return
 */
-static void WifiUnit_Launch(void)
-{
-    if (xTaskCreate(WifiUnit_LaunchTask, "WifiUnit_LaunchTask", WIFI_UNIT_TASK_STACK_SIZE, null, WIFI_UNIT_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create launch task error\r\n");
-    }
-}
-
-
-/**
-* @Name  		WifiUnit_LaunchTask
-* @Author  		KT
-* @Description
-* @para
-*
-*
-* @return
-*/
-static void WifiUnit_LaunchTask(void *pvParameters)
+static void WifiUnit_ConfigTask(void *pvParameters)
 {
     MacPhyIrq = HAL_GpioInit(MAC_PHY_IRQ_GPIO, MAC_PHY_IRQ_GPIO_PIN, kGPIO_DigitalInput, 0, kGPIO_IntRisingEdge);
     HAL_SetIrqCallback(MacPhyIrq,WifiUnit_MacPhyIrqCallback,null);
@@ -182,21 +213,15 @@ static void WifiUnit_LaunchTask(void *pvParameters)
 
     unitInfo = Conference.wifiUnitInfo();
 
-
+	/* 等待网络自适应 */
     while(HAL_MacPhyGetAutoNegotiation(tDm9051) != kStatus_Success) {
-        DELAY(200);
+        DELAY(100);
     }
 
-    if (xTaskCreate(WifiUnit_NetDataProcessTask, "WifiUnit_NetDataProcessTask", WIFI_UNIT_TASK_STACK_SIZE, null, WIFI_UNIT_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create launch task error\r\n");
-    }
-
-    if (xTaskCreate(WifiUnit_NetDataTransmitTask, "WifiUnit_NetDataTransmitTask", WIFI_UNIT_TASK_STACK_SIZE, null, WIFI_UNIT_TASK_PRIORITY, null) != pdPASS) {
-        Log.e("create launch task error\r\n");
-    }
-
-    /* 启动轮询定时器 */
+	/* 初始化轮询定时器 */
     wifiPollingTmr = xTimerCreate("wifiPolling",WIFI_POLLING_TIME_MS,pdTRUE,null,WifiUnit_PollingTimer);
+
+	Log.i("Wifi unit configuration finish ... \r\n");
 
 
     vTaskDelete(null);
@@ -222,20 +247,21 @@ static void WifiUnit_NetDataProcessTask(void *pvParameters)
     uint8_t *recvBuffer, recvLength;
 	ConfSysInfo_S *info;
 
-    Log.d("Wifi unit data process task start!!\r\n");
-
+	Log.i("Wifi unit data process task start!!\r\n");
+	
     recvBuffer = MALLOC(100);
     exData = MALLOC(50);
-
 
     Protocol.wifiUnit(&prot,0,MasterStarUp_MtoU_G,0,0);
     WifiUnit_NetDataTransmit(kMode_Wifi_Multicast,&prot);
 
     xTimerStart(wifiPollingTmr,0);
+	Log.i("Wifi unit polling timer start!!\r\n");
 
 	/* 广播模式及数量 */
 	info = Conference.getConfSysInfo();
 	WifiUnit_NetDataTransmit(kMode_Wifi_Multicast,Protocol.wifiUnit(&prot,0,ChangeMicManage_MtoU_G,info->config->micMode,info->config->wifiAllowOpen));
+	
     while(1) {
         xSemaphoreTake(RecvSemaphore,MAX_NUM);
 
@@ -253,20 +279,17 @@ static void WifiUnit_NetDataProcessTask(void *pvParameters)
         unitSrcMac = &netBuf->srcMac;
         unitSrcIp = &netBuf->srcIp;
 
+		Log.d("Wifi mac = %02X-%02X-%02X-%02X-%02X-%02X \r\n",unitSrcMac->mac0,unitSrcMac->mac1 ,unitSrcMac->mac2 ,unitSrcMac->mac3 ,unitSrcMac->mac4 ,unitSrcMac->mac5 );
+
         /* 复制参数 */
         memcpy(&prot,netBuf->data,sizeof(WifiUnitProtocol_S));
         prot.id = lwip_htons(prot.id);
 
-//        Log.d("wifi net data: id = %d, cmd = %d , ph = %d , pl = %d \r\n",prot.id,prot.cmd,prot.ph,prot.pl);
 
         /* 协议内容中有拓展内容 */
         if(netBuf->len > sizeof(WifiUnitProtocol_S)) {
             exDataLen = netBuf->len - sizeof(WifiUnitProtocol_S);
             memcpy(exData,netBuf->data + sizeof(WifiUnitProtocol_S),exDataLen);
-
-//            for(int i = 0; i < exDataLen; i++)
-//                printf(" 0x%X ",exData[i]);
-//            printf("\r\n");
         }
 
         if(prot.id > WIFI_UNIT_START_ID && prot.id <= (WIFI_UNIT_START_ID + WIFI_UNIT_MAX_ONLINE_NUM)) {
@@ -368,11 +391,14 @@ clear_buf:
 static void WifiUnit_AccessSystem(uint16_t id,Network_Mac_S *unitSrcMac,Network_Addr_S *unitSrcIp,UnitAttr_EN attr)
 {
     ConfSysInfo_S *info;
-    uint8_t content[10],contLen = 0;
+    uint8_t content[20],contLen = 0;
     WifiUnitProtocol_S prot;
     UnitInfo_S *devInfo;
 
     ERR_CHECK(unitSrcMac != null && unitSrcIp != null,return);
+	ERR_CHECK(id > 0 && id <= WIFI_UNIT_MAX_ONLINE_NUM, return);
+	ERR_CHECK(!NETWORK_COMPARISON_MAC(unitSrcMac,(&nullMac)), return);
+
 
     devInfo = &unitInfo[id];
 
@@ -388,34 +414,40 @@ static void WifiUnit_AccessSystem(uint16_t id,Network_Mac_S *unitSrcMac,Network_
 
         /* 获取系统状态并下发 */
         info = Conference.getConfSysInfo();
-        content[0] = info->state.sysMode;
+        
         switch(info->state.sysMode) {
         case kMode_Conference:
         default:
-            content[1] = info->config->micMode;
-            content[2] = info->config->wifiAllowOpen;
-            contLen = 3;
+        	content[6] = kMode_Conference;
+            content[7] = info->config->micMode;
+            content[8] = info->config->wifiAllowOpen;
+            contLen = 9;
             break;
         case kMode_Sign:
-            content[1] = (uint8_t)info->state.totalSignNum >> 8;
-            content[2] = (uint8_t)info->state.totalSignNum;
-            content[3] = (uint8_t)info->state.currentSignNum >> 8;
-            content[4] = (uint8_t)info->state.currentSignNum;
-            content[5] = unitInfo[id].sign;
-            content[6] = info->config->micMode;
-            content[7] = info->config->wifiAllowOpen;
-            contLen = 8;
+		case kMode_DevSign:
+			content[6] = kMode_Sign;
+            content[7] = (uint8_t)info->state.totalSignNum >> 8;
+            content[8] = (uint8_t)info->state.totalSignNum;
+            content[9] = (uint8_t)info->state.currentSignNum >> 8;
+            content[10] = (uint8_t)info->state.currentSignNum;
+            content[11] = devInfo->sign;
+            content[12] = info->config->micMode;
+            content[13] = info->config->wifiAllowOpen;
+            contLen = 14;
             break;
         case kMode_Vote:
-            content[1] = null;
-            content[2] = info->config->micMode;
-            content[3] = info->config->wifiAllowOpen;
-            content[4] = (uint8_t)info->state.currentSignNum;
-            content[5] = unitInfo[id].sign;
-            contLen = 6;
+		case kMode_DevVote:
+			content[6] = kMode_Vote;
+            content[7] = info->state.voteMode;
+            content[8] = info->config->micMode;
+            content[9] = info->config->wifiAllowOpen;
+            content[10] = devInfo->vote;
+            content[11] = devInfo->sign;
+            contLen = 12;
             break;
         case kMode_EditID:
-            contLen = 1;
+			content[6] = kMode_EditID;
+            contLen = 7;
             break;
         }
 
@@ -424,16 +456,15 @@ static void WifiUnit_AccessSystem(uint16_t id,Network_Mac_S *unitSrcMac,Network_
         NETWORK_SET_MAC((&devInfo->mac),unitSrcMac->mac0,unitSrcMac->mac1,unitSrcMac->mac2,unitSrcMac->mac3,unitSrcMac->mac4,unitSrcMac->mac5);
         NETWORK_SET_ADDR((devInfo->ip),unitSrcIp->addr0,unitSrcIp->addr1,unitSrcIp->addr2,unitSrcIp->addr3);
 
+		/* 同意进入系统并通知话筒模式 */
         WifiUnit_NetDataTransmitWithExData(kMode_Wifi_Unitcast,&prot,contLen,content);
 
-        /* 如果设备本来已经在线，就不发单元上线通知给会议任务 */
-        if(!devInfo->online) {
-            WifiUnit_NotifyConference(&prot);
-            devInfo->online = true;
-        }
+        WifiUnit_NotifyConference(&prot);
 
     }
 }
+
+
 
 /**
 * @Name  		WifiUnit_NetDataTransmitTask
@@ -453,6 +484,8 @@ static void WifiUnit_NetDataTransmitTask(void *pvParameters)
 
     data = MALLOC(100);
     frame = (Network_EthernetFrame_S *)data;
+
+	Log.i("Wifi unit data transmit task start!!\r\n");
 
     while(1) {
         xQueueReceive(SendQueue, &netBuf, MAX_NUM);
@@ -513,7 +546,9 @@ static void WifiUnit_PollingTimer(TimerHandle_t xTimer)
 
     switch(info->state.sysMode) {
     case kMode_Conference:
+	case kMode_DevSign:
     case kMode_Sign:
+	case kMode_DevVote:
     case kMode_Vote:
     default: {
         for(i = 0,id = pollingId + 1; i < WIFI_UNIT_MAX_ONLINE_NUM; i++,id++) {
@@ -610,9 +645,21 @@ static void  WifiUnit_NetDataTransmitWithExData(WifiSendMode_EN mode,WifiUnitPro
     uint8_t length,i;
     static uint8_t framecnt;
 
+	/* 协议句柄指针为空 ; 拓展字节长度不为0 但拓展字节指针为空 */
     ERR_CHECK((prot != null) && !(exLen != 0 && exData == null), return);
-	ERR_CHECK(prot->id >= 0 && prot->id <= WIFI_UNIT_MAX_ONLINE_NUM, return );
+	/* id为0但发送模式不为组播 */
 	ERR_CHECK(!(prot->id == 0 && mode != kMode_Wifi_Multicast), return );
+
+#if 1
+	/* 自适应ID，如果传入id为0x3000 ~ 0x312C自动减去0x3000 */
+	if(prot->id >= 0x3000 && prot->id <= 0x312C)
+		prot->id -= WIFI_UNIT_START_ID;
+
+#endif
+
+	/* 判断ID范围是否合法 */
+	ERR_CHECK(prot->id >= 0 && prot->id <= WIFI_UNIT_MAX_ONLINE_NUM, return );
+
 
     /* wifi系统基本协议长度减去ID两个字节剩下3个字节,组播增加前面一个字节framecnt */
     length = 3 + exLen + (mode == kMode_Wifi_Multicast ? 1 : 0);

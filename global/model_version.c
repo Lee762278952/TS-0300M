@@ -24,8 +24,6 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-/* ÐÍºÅÃû³Æ */
-#define DEVICE_MODEL_NAME								(deviceModel[DEVICE_MODEL])
 
 /*******************************************************************************
  * Prototypes
@@ -34,7 +32,6 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-const char deviceModel[1][15] = {"TS-0300M"};
 const int  MONTH_PER_YEAR=12;
 const char szEnglishMonth[MONTH_PER_YEAR][4]={ "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
 static char buildTime[40];
@@ -70,7 +67,7 @@ char *APP_BuildTime(void)
 
 void APP_PrintDeviceMsg(void){
 	printf("\r\n********************************************\r\n");
-	printf("**      Model:   %s\r\n",DEVICE_MODEL_NAME);
+	printf("**      Model:   %s\r\n",DEVICE_MODEL);
 	printf("**    Version:   %s\r\n",APP_VERSION);
 	printf("** Build time:   %s\r\n",APP_BUILD_TIME);
 	printf("********************************************\r\n\r\n");

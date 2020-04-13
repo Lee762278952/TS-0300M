@@ -30,6 +30,7 @@
 /*! @brief Timeout times for waiting flag. */
 #ifndef LPI2C_WAIT_TIMEOUT
 #define LPI2C_WAIT_TIMEOUT 0U /* Define to zero means keep waiting until the flag is assert/deassert. */
+//#define LPI2C_WAIT_TIMEOUT 512U
 #endif
 
 /*! @brief LPI2C status return codes. */

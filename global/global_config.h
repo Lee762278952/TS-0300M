@@ -9,16 +9,11 @@
 /***********************************************************************************************
  * 									设备版本相关信息
  **********************************************************************************************/
-/* 主机型号 */
-#define TS_0300M										(0)
-
-
 /* 本机型号 */
-#define DEVICE_MODEL									TS_0300M
+#define DEVICE_MODEL									"TS_0300M"
 
 /*  软件版本  */
 #define APP_VERSION										"V1.0"
-
 
 /* 打印设备信息 */
 #define APP_PRINT_DEV_MSG()								APP_PrintDeviceMsg()
@@ -30,6 +25,17 @@
 extern char *APP_BuildTime(void);
 extern void APP_PrintDeviceMsg(void);
 extern void APP_GetBuildDate(uint16_t *year,uint16_t *mon,uint16_t *day);
+
+//extern __asm uint32_t vPortGetIPSR(void);
+
+//static __inline bool IS_IRQ(void) 
+//{
+//    if (vPortGetIPSR())
+//        return true;
+
+//    return false;
+//}
+
 
 /***********************************************************************************************
  * 									全局定义
@@ -56,6 +62,18 @@ extern void APP_GetBuildDate(uint16_t *year,uint16_t *mon,uint16_t *day);
 #define ERR_CHECK(condition, implement) 								do { if (!(condition)) {implement;}} while(0)
 /* 带debug错误条件判断 */
 #define ERR_CHECK_DBG(condition, dbg, implement) 						do { if (!(condition)) {Log.e(dbg); implement;}} while(0)
+
+
+/*********************************************************************************************
+ * 							    功能开关定义
+ ********************************************************************************************/
+/* 关闭以下功能编译和下载代码会快很多，一般测试用 */
+/* WEB功能开关 */
+#define WEB_FUNCTION_ENABLE												(false)
+
+/* DSP功能开关 */
+#define DSP_FUNCTION_ENABLE  											(false)
+
 /*********************************************************************************************
  * 							    调试信息相关定义
  ********************************************************************************************/
@@ -182,7 +200,7 @@ extern void APP_GetBuildDate(uint16_t *year,uint16_t *mon,uint16_t *day);
 #define UART1_ENABLE									ENABLE
 
 /* UART2 接口使能  */
-#define UART2_ENABLE									DISABLE
+#define UART2_ENABLE									ENABLE
 
 /* UART3 接口使能  */
 #define UART3_ENABLE									ENABLE

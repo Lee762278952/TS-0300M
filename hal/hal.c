@@ -50,8 +50,10 @@ static void HAL_PinConfig(void){
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_04_GPIO3_IO04,0x10B0u);
 
 	/* USB-WT2000 switch relay control */
-	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_01_GPIO1_IO01,0U);                                  
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_01_GPIO1_IO01, 0xB0A9u);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_11_GPIO1_IO11,0U);                                  
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_11_GPIO1_IO11, 0xB0A9u);   	//V4版本硬件
+//	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_01_GPIO1_IO01,0U);                                  
+//	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_01_GPIO1_IO01, 0xB0A9u);		//V3版本硬件
 
 	/* USB Power control */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_09_GPIO1_IO25,0U);                                  
@@ -65,7 +67,7 @@ static void HAL_PinConfig(void){
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_13_GPIO2_IO29,0U);                                  
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_B1_13_GPIO2_IO29, 0xB0A9u);
 
-	/* Partition Out Ctrl L10  */
+	/* Partition Out Ctrl L10   */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_15_GPIO1_IO15,0U);                                  
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_15_GPIO1_IO15, 0xB0A9u);
 
@@ -80,6 +82,10 @@ static void HAL_PinConfig(void){
 	/* 485 Transceiver control */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_05_GPIO1_IO21,0U);                                  
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_05_GPIO1_IO21, 0xB0A9u);
+
+	/* Fire alarm signal(H14) */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_14_GPIO1_IO14,0U);                                  
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_14_GPIO1_IO14, 0xB0A9u);
 
 #if (defined(LPI2C1_ENABLE) && LPI2C1_ENABLE)
 	/* I2C1 */
@@ -208,6 +214,10 @@ static void HAL_PinConfig(void){
 
 #if (defined(UART2_ENABLE) && UART2_ENABLE)
 	/* UART2 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_02_LPUART2_TX,0U);									
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_03_LPUART2_RX,0U);	
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_02_LPUART2_TX,0x10B0u);								
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_03_LPUART2_RX,0x10B0u);
 #endif
 
 #if (defined(UART3_ENABLE) && UART3_ENABLE)
@@ -534,13 +544,13 @@ void HAL_Init(void){
     BOARD_ConfigMPU();
     BOARD_InitPins();
     BOARD_BootClockRUN();
-//    BOARD_InitDebugConsole();
     BOARD_InitModuleClock();
 
+	/* HAL */
 	HAL_PinConfig();
 	HAL_EnetConfig();
 	HAL_I2cMasterConfig();
-////	HAL_SaiInit();
+//	HAL_SaiInit();
 	HAL_UartConfig();
 	HAL_SpiMasterConfig();
 }

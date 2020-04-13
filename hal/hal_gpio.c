@@ -43,7 +43,7 @@ static HAL_Gpio_S Gpio_Instance[GPIO_HAL_INSTANCE_NUM] = {null};
 /*******************************************************************************
  * Code
  ******************************************************************************/
-HAL_GpioIndex HAL_GpioInit(GPIO_Type *base, uint8_t pin, gpio_pin_direction_t dirc, uint8_t logic, gpio_interrupt_mode_t mode){
+HAL_GpioHandler HAL_GpioInit(GPIO_Type *base, uint8_t pin, gpio_pin_direction_t dirc, uint8_t logic, gpio_interrupt_mode_t mode){
 	uint8_t index;
 	HAL_Gpio_S *gpio = null;
 
@@ -62,7 +62,6 @@ HAL_GpioIndex HAL_GpioInit(GPIO_Type *base, uint8_t pin, gpio_pin_direction_t di
 		GPIO_PinInit(gpio->base, gpio->pin, &gpio->config);
 
 		if(dirc == kGPIO_DigitalInput && mode != kGPIO_NoIntmode){
-			
 			HAL_GpioIrqEnable(gpio);
 		}
 		return index;
@@ -72,16 +71,28 @@ HAL_GpioIndex HAL_GpioInit(GPIO_Type *base, uint8_t pin, gpio_pin_direction_t di
  }
 
 
-status_t HAL_SetGpioLevel(HAL_GpioIndex index,uint8_t level){
+status_t HAL_SetGpioLevel(HAL_GpioHandler index,uint8_t level){
 	HAL_Gpio_S *gpio;
 	ERR_CHECK(index >=0 && index < GPIO_HAL_INSTANCE_NUM, return kStatus_Fail);
+	
 	gpio = &Gpio_Instance[index];
 	ERR_CHECK(gpio->base != null, return kStatus_Fail);
 	GPIO_WritePinOutput(gpio->base, gpio->pin, level);	
 	return kStatus_Success;
- }
+}
 
-status_t HAL_SetIrqCallback(HAL_GpioIndex index,GpioIrqCallback callback,void *param){
+uint8_t HAL_GetGpioLevel(HAL_GpioHandler index){
+	HAL_Gpio_S *gpio;
+	ERR_CHECK(index >=0 && index < GPIO_HAL_INSTANCE_NUM, return kStatus_Fail);
+	
+	gpio = &Gpio_Instance[index];
+	ERR_CHECK(gpio->base != null, return kStatus_Fail);
+
+	return (uint8_t)GPIO_ReadPinInput(gpio->base, gpio->pin);
+
+}
+
+status_t HAL_SetIrqCallback(HAL_GpioHandler index,GpioIrqCallback callback,void *param){
 	HAL_Gpio_S *gpio;
 
 	ERR_CHECK(index >=0 && index < GPIO_HAL_INSTANCE_NUM, return kStatus_Fail);

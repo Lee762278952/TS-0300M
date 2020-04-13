@@ -1,7 +1,7 @@
 /*
- * File:           E:\Work\Work_2019\Work_20191017_第三代会议主机API（1061+DSP）\第三代系统资料\default-20191216\ADAU1466-1\adau1466_1_IC_1_REG.h
+ * File:           E:\Work\Work_2019\Work_20191017_第三代会议主机API（1061+DSP）\第三代系统资料\TS-0300M-ADAU1466-20200409\default-20191231\ADAU1466-1\adau1466_1_IC_1_REG.h
  *
- * Created:        Monday, December 16, 2019 9:51:54 AM
+ * Created:        Thursday, April 09, 2020 11:02:13 AM
  * Description:    20191108:IC 1 control register definitions.
  *
  * This software is distributed in the hope that it will be useful,
@@ -14,7 +14,7 @@
  * are intended for resale to audio product end users. This software
  * may not be distributed whole or in any part to third parties.
  *
- * Copyright ©2019 Analog Devices, Inc. All rights reserved.
+ * Copyright ©2020 Analog Devices, Inc. All rights reserved.
  */
 #ifndef __ADAU1466_1_IC_1_REG_H__
 #define __ADAU1466_1_IC_1_REG_H__
@@ -353,7 +353,7 @@
 /* SERIAL_BYTE_4_0  - Registers (IC 1) */
 #define DSP1_REG_SERIAL_BYTE_4_0_IC_1_ADDR             0xF210
 #define DSP1_REG_SERIAL_BYTE_4_0_IC_1_BYTE             2
-#define DSP1_REG_SERIAL_BYTE_4_0_IC_1_VALUE            0x323
+#define DSP1_REG_SERIAL_BYTE_4_0_IC_1_VALUE            0x9323
 
 /* SERIAL_BYTE_4_1  - Registers (IC 1) */
 #define DSP1_REG_SERIAL_BYTE_4_1_IC_1_ADDR             0xF211
@@ -3552,8 +3552,8 @@
 #define DSP1_R66_SERIAL_BYTE_4_0_BCLK_POL_IC_1         0x0    /* 0b	[7] */
 #define DSP1_R66_SERIAL_BYTE_4_0_LRCLK_POL_IC_1        0x1    /* 1b	[8] */
 #define DSP1_R66_SERIAL_BYTE_4_0_LRCLK_MODE_IC_1       0x1    /* 1b	[9] */
-#define DSP1_R66_SERIAL_BYTE_4_0_BCLK_SRC_IC_1         0x0    /* 000b	[12:10] */
-#define DSP1_R66_SERIAL_BYTE_4_0_LRCLK_SRC_IC_1        0x0    /* 000b	[15:13] */
+#define DSP1_R66_SERIAL_BYTE_4_0_BCLK_SRC_IC_1         0x4    /* 100b	[12:10] */
+#define DSP1_R66_SERIAL_BYTE_4_0_LRCLK_SRC_IC_1        0x4    /* 100b	[15:13] */
 #define DSP1_R66_SERIAL_BYTE_4_0_TDM_MODE_IC_1_MASK    0x7
 #define DSP1_R66_SERIAL_BYTE_4_0_TDM_MODE_IC_1_SHIFT   0
 #define DSP1_R66_SERIAL_BYTE_4_0_DATA_FMT_IC_1_MASK    0x18

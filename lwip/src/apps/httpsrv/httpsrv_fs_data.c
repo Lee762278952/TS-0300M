@@ -1,12 +1,16 @@
+
+#include "global_config.h"
 #include <httpsrv_fs.h>
 
 
-#define  ALL_WEB_PAGE_ENABLE		1
+#ifndef  WEB_FUNCTION_ENABLE
+#define  WEB_FUNCTION_ENABLE		1
+#endif
 
 
 #include "webpage/index.html.h"
 
-#if ALL_WEB_PAGE_ENABLE
+#if WEB_FUNCTION_ENABLE
 
 #include "webpage/0.js.h"
 #include "webpage/1.js.h"
@@ -31,12 +35,12 @@ extern const HTTPSRV_FS_DIR_ENTRY httpsrv_fs_data[];
 
 const HTTPSRV_FS_DIR_ENTRY httpsrv_fs_data[] = {
 	{ "/index.html", 0, (unsigned char*)httpsrv_fs_index_html, sizeof(httpsrv_fs_index_html) },
-#if ALL_WEB_PAGE_ENABLE
+#if WEB_FUNCTION_ENABLE
 	{ "/static/common.js", 0, (unsigned char*)httpsrv_fs_common_js, sizeof(httpsrv_fs_common_js) },
 	{ "/static/favicon.ico", 0, (unsigned char*)httpsrv_fs_favicon_ico, sizeof(httpsrv_fs_favicon_ico) },
-	{ "/static/css/app.1aa3ddb39b42cc5f7b895efe4a442068.css", 0, (unsigned char*)httpsrv_fs_app_css, sizeof(httpsrv_fs_app_css) },
-	{ "/static/fonts/element-icons.6f0a763.ttf", 0, (unsigned char*)httpsrv_fs_element_icons_ttf, sizeof(httpsrv_fs_element_icons_ttf) },
-	{ "/static/img/head_img.a44d6ff.png", 0, (unsigned char*)httpsrv_fs_head_img_png, sizeof(httpsrv_fs_head_img_png) },
+	{ "/static/css/app.css", 0, (unsigned char*)httpsrv_fs_app_css, sizeof(httpsrv_fs_app_css) },
+	{ "/static/fonts/element-icons.ttf", 0, (unsigned char*)httpsrv_fs_element_icons_ttf, sizeof(httpsrv_fs_element_icons_ttf) },
+	{ "/static/img/head_img.png", 0, (unsigned char*)httpsrv_fs_head_img_png, sizeof(httpsrv_fs_head_img_png) },
 	{ "/static/js/0.js", 0, (unsigned char*)httpsrv_fs_0_js, sizeof(httpsrv_fs_0_js) },
 	{ "/static/js/1.js", 0, (unsigned char*)httpsrv_fs_1_js, sizeof(httpsrv_fs_1_js) },
 	{ "/static/js/2.js", 0, (unsigned char*)httpsrv_fs_2_js, sizeof(httpsrv_fs_2_js) },

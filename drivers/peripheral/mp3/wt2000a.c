@@ -25,165 +25,22 @@
 #define CMD_BUF_HEAD									   		(0x7E)
 #define CMD_BUF_END										   		(0xEF)
 
-#define SEND_CMD_ONE_PARA(_cmd,_para)							do{Para[0] = _para;Wt2000_SendCommand(_cmd,Para,1);}while(0)
-#define SEND_CMD_NON_PARA(_cmd)									Wt2000_SendCommand(_cmd,null,null)
-
-
-#define WT2000_PL_UPLAY_DIRNAME                           		(0xA9)                      //指定 U盘中 文件夹中的音乐文件名播放	  
-#define WT2000_PL_FINDEX                                  		(0xA4)                      //指定   SD卡中 文件夹中的音乐索引播放	 
-#define WT2000_PL_FNAME                                   		(0xA5)                      //指定   SD卡中 文件夹中的音乐文件名播放	  	
-#define WT2000_PL_PAUSE                            		       	(0xAA)                      //暂停、放音命令
-#define WT2000_PL_STOP                                    		(0xAB)                      //停止放音命令
-#define WT2000_PL_NEXT                                    		(0xAC)                      //下一曲命令
-#define WT2000_PL_PREVIOUS                                     	(0xAD)                      //上一曲命令
-#define WT2000_PL_VOL                                     		(0xAE)                      //音量控制命令
-#define WT2000_PL_MODE                                    		(0xAF)                      //指定播放模式
-
-#define WT2000_PL_FF                                      		(0xD0)                      //快进命令
-#define WT2000_PL_FP                                      		(0xD1)                      //快退命令
-#define WT2000_SPACE                                      		(0xD2)                      //外部存储器操作选择命令码
-#define WT2000_CHANNEL                                    		(0xD3)                      //指定音频输入通道和增益				？
-#define WT2000_REC_SPEED                                  		(0xD4)                      //设置录音品质命令
-#define	WT2000_REC_INDEX		                          		(0xD7)                      //指定文件夹内文件索引录音
-#define WT2000_REC_FNAME                                  		(0xD8)                      //指定文件夹内文件名录音命令
-#define WT2000_REC_STOP                                   		(0xD9)                      //停止录音命令
-
-#define	WT2000_RD_PRONUM		 								(0xC0)						//读工程编号
-#define WT2000_RD_VOLUME     									(0xC1)						//读取音量
-#define WT2000_RD_MODE      									(0xC2)						//读取当前工作状态
-#define WT2000_RD_FQTY       									(0xC6)						//读取指定文件夹的音乐文件总数 SD卡
-#define WT2000_RD_FQTY_U		 								(0xC8)						//读取指定文件夹的音乐文件总数 U盘
-#define WT2000_RD_FLASH_ST   									(0xCA)						//读当前存储体连接状态
-#define WT2000_RD_FREE_SPACE 									(0xCE)						//读取存储体的剩余空间     	(要等很久才有回复)
-
-
-
-typedef enum{
-	r128KBPS=0,
-	r96KBPS,
-	r64KBPS,
-	r32KBPS,
-}MP3BitRate_EN;
-
 
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-void Wt2000_SendCommand(uint8_t cmd,const uint8_t *para,uint8_t paraLen);
+void Wt2000_UartSend(uint8_t cmd,const uint8_t *para,uint8_t paraLen);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 static Wt2000_AckCallback AckCallback = null;
 static uint8_t CmdBuf[64] = {0};
-static uint8_t Para[30];
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
-void Wt2000_CfgReturnNecessary(void){
-	SEND_CMD_ONE_PARA(0xBA,0x01);
-}
-
-void Wt2000_CfgUsbDisk(void){
-	SEND_CMD_ONE_PARA(0xD2,0x01);
-}
-
-void Wt2000_CfgMp3Rate(void){
-	SEND_CMD_ONE_PARA(WT2000_REC_SPEED,r128KBPS);
-}
-
-void Wt2000_CfgDefVolume(void){
-	SEND_CMD_ONE_PARA(WT2000_PL_VOL,0x1F);
-}
-
-//void Wt2000_CfgPlayMode(WtPlaySta_EN mode){
-//	if(mode >= 0 && mode <= 4)
-//		SEND_CMD_ONE_PARA(WT2000_PL_MODE,mode);
-//}
-
-
-void Wt2000_QueryState(WtCmdType_EN type){
-	switch(type){
-	case kType_WtCmd_Volume:
-	case kType_WtCmd_State:
-	case kType_WtCmd_FileNum:
-	case kType_WtCmd_DirFileNum:	
-	case kType_WtCmd_CurrPlayFile:
-	case kType_WtCmd_LinkSta:
-	case kType_WtCmd_Space:
-		SEND_CMD_NON_PARA(type);
-	break;
-	default:break;
-	}
-}
-
-
-
-void Wt2000_AudioRecord(const char *dir,  const char *file){
-	uint8_t dLen,fLen,data[30] = {0};
-
-	ERR_CHECK(dir != null && file != null, return);
-
-	dLen = strlen(dir);
-	fLen = strlen(file);
-
-	ERR_CHECK(dLen != 0 && fLen != 0, return);
-
-	/* 文件夹名固定 5 字符，文件名最多 22 个字符 */
-	memcpy(&data[0],dir,dLen > 5 ? 5 : dLen);
-	memcpy(&data[5],file,fLen > 22 ? 22 : fLen);
-
-	Wt2000_SendCommand(WT2000_REC_FNAME,data,strlen((const char *)data));
-}
-
-void Wt2000_RecordStop(void){
-	SEND_CMD_NON_PARA(WT2000_REC_STOP);
-}
-
-void Wt2000_AudioPlay(const char *dir, const char *file){
-	uint8_t dLen,fLen,data[30] = {0};
-
-	ERR_CHECK(dir != null && file != null, return);
-
-	dLen = strlen(dir);
-	fLen = strlen(file);
-
-	ERR_CHECK(dLen != 0 && fLen != 0, return);
-
-	/* 文件夹名固定 5 字符，文件名大于8个字符时，取前6个字符加上"~1" */
-	memcpy(&data[0],dir,dLen > 5 ? 5 : dLen);
-	if(fLen > 8){
-		memcpy(&data[5],file,6);
-		sprintf((char *)&data[11],"~1");
-	}
-	else{
-		memcpy(&data[5],file,fLen);
-	}
-
-	Wt2000_SendCommand(WT2000_PL_UPLAY_DIRNAME,data,strlen((const char *)data));
-	
-}
-
-void Wt2000_AudioPlayPause(void){
-	SEND_CMD_NON_PARA(WT2000_PL_PAUSE);
-}
-
-
-void Wt2000_PlayNext(void){
-	SEND_CMD_NON_PARA(WT2000_PL_NEXT);
-}
-
-void Wt2000_PlayPrevious(void){
-	SEND_CMD_NON_PARA(WT2000_PL_PREVIOUS);
-}
-
-
-void Wt2000_PlayStop(void){
-	SEND_CMD_NON_PARA(WT2000_PL_STOP);
-}
-
-void Wt2000_AckRecvEnable(bool enable){
+void Wt2000_SetRecvEnable(bool enable){
 	LPUART_EnableRx(WT2000_UART_PORT, enable);
 
 	if(enable)
@@ -201,7 +58,95 @@ status_t Wt2000_SetAckCallback(Wt2000_AckCallback callback){
 	return kStatus_Success;
 }
 
-static void Wt2000_SendCommand(uint8_t cmd,const uint8_t *para,uint8_t paraLen)
+status_t Wt2000_SendCommand(WtCmdType_EN cmd,const char *dir,const char *file,uint8_t *para,uint8_t pLen){
+	uint8_t dLen,fLen,data[32] = {0};
+
+	switch(cmd){
+		/* 按文件名录音字段处理 */
+		case kType_WtCmd_RecStart:{
+			ERR_CHECK(dir != null && file != null, return kStatus_Fail);
+
+			dLen = strlen(dir);
+			fLen = strlen(file);
+
+			ERR_CHECK(dLen != 0 && fLen != 0, return kStatus_Fail);
+
+			/* 文件夹名固定 5 字符，文件名最多 22 个字符 */
+			memcpy(&data[0],dir,dLen > 5 ? 5 : dLen);
+			memcpy(&data[5],file,fLen > 22 ? 22 : fLen);
+
+			Wt2000_UartSend(kType_WtCmd_RecStart,data,strlen((const char *)data));
+		}break;
+		
+		/* 按文件名播音字段处理 */
+		case kType_WtCmd_PlayFile:{
+			ERR_CHECK(dir != null && file != null, return kStatus_Fail);
+
+			dLen = strlen(dir);
+			fLen = strlen(file);
+
+			ERR_CHECK(dLen != 0 && fLen != 0, return kStatus_Fail);
+
+			/* 文件夹名固定 5 字符，文件名大于8个字符时，取前6个字符加上"~1" */
+			memcpy(&data[0],dir,dLen > 5 ? 5 : dLen);
+			if(fLen > 8){
+				memcpy(&data[5],file,6);
+				sprintf((char *)&data[11],"~1");
+			}
+			else{
+				memcpy(&data[5],file,fLen);
+			}
+
+			Wt2000_UartSend(kType_WtCmd_PlayFile,data,strlen((const char *)data));
+		}break;
+
+		/* 查询字段 */
+		case kType_WtCmd_Volume:
+		case kType_WtCmd_State:
+		case kType_WtCmd_FileNum:
+		case kType_WtCmd_DirFileNum:	
+		case kType_WtCmd_CurrPlayFile:
+		case kType_WtCmd_LinkSta:
+		case kType_WtCmd_Space:
+		/* 操作字段 */
+		case kType_WtCmd_PlayOrPause:
+		case kType_WtCmd_Stop:
+		case kType_WtCmd_Next:
+		case kType_WtCmd_Previous:
+		case kType_WtCmd_RecStop:
+			Wt2000_UartSend(cmd,null,null);
+		break;
+		case kType_WtCmd_PlayDirIndex:{
+			ERR_CHECK(data != null,return kStatus_Fail);
+			
+			Wt2000_UartSend(cmd,para,pLen);		
+		}
+		break;
+		
+		default:
+			break;
+		
+	}
+
+	return kStatus_Success;
+}
+
+status_t Wt2000_SendConfig(WtCmdType_EN cmd,uint8_t cfg){
+
+	switch(cmd){
+		case kType_WtCmd_Disk:
+		case kType_WtCmd_NeedReturn:
+		case kType_WtCmd_RecordRate:
+		case kType_WtCmd_SetVolume:
+		case kType_WtCmd_SetPlayMode:
+			Wt2000_UartSend(cmd,&cfg,1);
+			return kStatus_Success;
+		default:
+			return kStatus_Fail;
+	}
+}
+
+static void Wt2000_UartSend(uint8_t cmd,const uint8_t *para,uint8_t paraLen)
 {
 	uint8_t checksum = 0,len,i;
 	
@@ -227,6 +172,7 @@ static void Wt2000_SendCommand(uint8_t cmd,const uint8_t *para,uint8_t paraLen)
 	LPUART_WriteBlocking(WT2000_UART_PORT,CmdBuf,len + 2);
 
 #if 0 
+	printf("WT2k send : ");
 	for(i = 0;i < len + 2;i++)
 		printf("%X ",CmdBuf[i]);
 	printf("\r\n");

@@ -34,8 +34,10 @@
 #define m_interrupts_start             	0x60002000
 #define m_interrupts_size              	0x00000400
 
+
 #define m_text_start                   	0x60002400
 #define m_text_size                    	0x007FDC00
+
 
 ;#if (defined(SDRAM_ENABLE) && SDRAM_ENABLE == 1)
 ;#define m_data_start                  	0x20000000

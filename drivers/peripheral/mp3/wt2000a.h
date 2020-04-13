@@ -11,9 +11,17 @@ typedef void(*Wt2000_AckCallback)(uint8_t data);
 
 
 typedef enum{
+	/* ≈‰÷√ */
+	kType_WtCmd_Disk = 0xD2,
+	kType_WtCmd_NeedReturn = 0xBA,
+	kType_WtCmd_RecordRate = 0xD4,
+	kType_WtCmd_SetVolume = 0xAE,
+	kType_WtCmd_SetPlayMode = 0xAF,
+	
 	/* ≤•∑≈ */
 	kType_WtCmd_PlayFile = 0xA9,
-	kType_WtCmd_Pause = 0xAA,
+	kType_WtCmd_PlayDirIndex = 0xA4,
+	kType_WtCmd_PlayOrPause = 0xAA,
 	kType_WtCmd_Stop = 0xAB,
 	kType_WtCmd_Next = 0xAC,
 	kType_WtCmd_Previous = 0xAD,
@@ -33,6 +41,14 @@ typedef enum{
 
 }WtCmdType_EN;
 
+typedef enum{
+	r128KBPS=0,
+	r96KBPS,
+	r64KBPS,
+	r32KBPS,
+}WtMp3BitRate_EN;
+
+
 typedef enum {
 	kStatus_WtPlay_Playing = 1,
 	kStatus_WtPlay_Stop = 2,
@@ -42,25 +58,10 @@ typedef enum {
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-void Wt2000_CfgReturnNecessary(void);
-void Wt2000_CfgUsbDisk(void);
-void Wt2000_CfgMp3Rate(void);
-void Wt2000_CfgDefVolume(void);
-
-
-void Wt2000_AckRecvEnable(bool enable);
-
-void Wt2000_QueryState(WtCmdType_EN type);
-void Wt2000_AudioRecord(const char *dir,  const char *file);
-void Wt2000_RecordStop(void);
-void Wt2000_AudioPlay(const char *dir, const char *file);
-void Wt2000_AudioPlayPause(void);
-void Wt2000_PlayNext(void);
-void Wt2000_PlayPrevious(void);
-void Wt2000_PlayStop(void);
-
-
+void Wt2000_SetRecvEnable(bool enable);
 status_t Wt2000_SetAckCallback(Wt2000_AckCallback callback);
+status_t Wt2000_SendCommand(WtCmdType_EN cmd,const char *dir,const char *file,uint8_t *para,uint8_t pLen);
+status_t Wt2000_SendConfig(WtCmdType_EN cmd,uint8_t cfg);
 
 
 #endif

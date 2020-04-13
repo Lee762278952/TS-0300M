@@ -154,7 +154,11 @@ status_t HAL_UartSend(HAL_UartHandler_S handle, const uint8_t *data, size_t leng
 	ERR_CHECK(data != null && length != 0 , return kStatus_Fail);
 	
     uartHandle = (UartHandler_S *)handle;
-
+//	printf("uart send(len = %d) : ",length);
+//	for(uint8_t i = 0;i < length;i++){
+//		printf("%02X ",data[i]);
+//	}
+//	printf("\r\n");
 	LPUART_WriteBlocking(uartHandle->base, data, length);
 
     return kStatus_Success;

@@ -223,7 +223,7 @@ typedef	struct
 
 extern	DspInfoStruct_S	g_unDspInfo;
 
-void ADAU1466_Test(void);
+//void ADAU1466_Test(void);
 /*
 *@Function NAME：   void I2C_ADAU1466_Init()
 *@description:     	硬件I2C初始化，ADAU1466做从，1061做主
@@ -232,7 +232,21 @@ void ADAU1466_Test(void);
 *@param[in]:        无
 *@return:           无
 */
-extern void I2C_ADAU1466_Init(void);
+//extern void I2C_ADAU1466_Init(void);
+status_t ADAU1466_1_Init(uint8_t section);
+status_t ADAU1466_2_Init(uint8_t section);
+/*
+*@Function NAME：   status_t ADAU1466_2_AliveDetect(void)
+*@description:     	DSP1,2存活检测
+*@Author:           陈泽芳
+*@param[out]:       无
+*@param[in]:        无
+*@return:           无
+*/
+status_t ADAU1466_1_AliveDetect(void);
+status_t ADAU1466_2_AliveDetect(void);
+
+
 
 /*
 *@Function NAME：   status_t ADAU1466_InputSource(DspOutput_E out,DspInputSrc_E src,DspVolume_E vol)
