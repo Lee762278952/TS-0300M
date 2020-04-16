@@ -167,20 +167,20 @@
 #define VOTE_ENABLE									(0x38)
 #define VOTE_DISABLE								(0x39)
 
-#define KEY3_FIRST_SIGN_VOTE 						(0x13)				// 投票/表决/评级/满意度 类型
-#define KEY3_FIRST_NOSIGN_VOTE   					(0x12)
-#define KEY3_LAST_SIGN_VOTE     					(0x11)
 #define KEY3_LAST_NOSIGN_VOTE						(0x10)
+#define KEY3_LAST_SIGN_VOTE     					(0x11)
+#define KEY3_FIRST_NOSIGN_VOTE   					(0x12)
+#define KEY3_FIRST_SIGN_VOTE 						(0x13)				// 投票/表决/评级/满意度 类型
 
-#define KEY5_FIRST_SIGN_SELECT						(0x17)
-#define KEY5_FIRST_NOSIGN_SELECT					(0x16)
-#define KEY5_LAST_SIGN_SELECT						(0x15)
 #define KEY5_LAST_NOSIGN_SELECT						(0x14)
+#define KEY5_LAST_SIGN_SELECT						(0x15)
+#define KEY5_FIRST_NOSIGN_SELECT					(0x16)
+#define KEY5_FIRST_SIGN_SELECT						(0x17)
 
-#define KEY5_FIRST_SIGN_RATE						(0x1B)
-#define KEY5_FIRST_NOSIGN_RATE						(0x1A)
-#define KEY5_LAST_SIGN_RATE							(0x19)
 #define KEY5_LAST_NOSIGN_RATE						(0x18)
+#define KEY5_LAST_SIGN_RATE							(0x19)
+#define KEY5_FIRST_NOSIGN_RATE						(0x1A)
+#define KEY5_FIRST_SIGN_RATE						(0x1B)
 
 #define KEY2_FIRST_SIGN_CUSTOM						(0x1C)
 #define KEY2_FIRST_NOSIGN_CUSTOM					(0x1D)
@@ -202,10 +202,10 @@
 #define KEY5_LAST_SIGN_CUSTOM						(0x36)
 #define KEY5_LAST_NOSIGN_CUSTOM						(0x37)
 
-#define KEY3_FIRST_SIGN_SATISFACTION	  			(0x3D)
-#define KEY3_FIRST_NOSIGN_SATISFACTION 				(0x3C)
-#define KEY3_LAST_SIGN_SATISFACTION	  				(0x3B)
 #define KEY3_LAST_NOSIGN_SATISFACTION  				(0x3A)
+#define KEY3_LAST_SIGN_SATISFACTION	  				(0x3B)
+#define KEY3_FIRST_NOSIGN_SATISFACTION 				(0x3C)
+#define KEY3_FIRST_SIGN_SATISFACTION	  			(0x3D)
 
 /* 前置字段 	BASIC_MSG  UNIT_CTRL */
 #define SET_UNTI_EQ									(0x40)
@@ -214,7 +214,7 @@
 #define GAIN_UNIT_SENSITIVITY						(0x44)
 #define SET_VOICE_CTRL_SENSITIVITY					(0x53)			
 #define SET_VOICE_CTRL_CLOSE_TIME					(0x54)
-#define SET_LANGUAGE(_lan)							(0xF0 + _lan)
+#define SET_LANGUAGE(_language)						(0xF0 + _language)
 
 /* 前置字段 	POLLING_MSG  SIGN_POLLING */
 #define HOST_SIGN_POLLIGN							(0x52)
@@ -229,36 +229,41 @@
 #define  POLLING_VOTE_SIGN  						(0x54)               //表决轮询码（三键表决，最后一次有效，需要签到）
 #define  POLLING_VOTE_F     						(0x55)               //表决轮询码 （三键表决，第一次有效，不需要签到） 
 #define  POLLING_VOTE_FSIGN 						(0x56)               //表决轮询码 （三键表决，第一次有效，需要签到）
+
 #define  POLLING_ELECT								(0x57)               //表决轮询码（五键选举，最后一次有效，不需要签到）
-#define  POLLING_ELECT_SIGN							(0x58)               //表决轮询码 （五键选举，第一次有效，需要签到）
-#define  POLLING_ELECT_F							(0x59)               //表决轮询码 （五键选举，第一次有效，不需要签到）
-#define  POLLING_ELECT_FSIGN 						(0x5A)               //表决轮询码（五键选举，最后一次有效，需要签到）
+#define  POLLING_ELECT_F							(0x58)               //表决轮询码 （五键选举，第一次有效，不需要签到）
+#define  POLLING_ELECT_FSIGN						(0x59)               //表决轮询码 （五键选举，第一次有效，需要签到）
+#define  POLLING_ELECT_SIGN 						(0x5A)               //表决轮询码（五键选举，最后一次有效，需要签到）
+
 #define  POLLING_RATE								(0x5B)               //表决轮询码（五键评级，最后一次有效，不需要签到）
-#define  POLLING_RATE_SIGN							(0x5C)               //表决轮询码 （五键评级，第一次有效，需要签到）
-#define  POLLING_RATE_F								(0x5D)               //表决轮询码 （五键评级，第一次有效，不需要签到）
-#define  POLLING_RATE_FSIGN							(0x5E)               //表决轮询码（五键评级，最后一次有效，需要签到）
+#define  POLLING_RATE_F								(0x5C)               //表决轮询码 （五键评级，第一次有效，不需要签到）
+#define  POLLING_RATE_FSIGN							(0x5D)               //表决轮询码 （五键评级，第一次有效，需要签到）
+#define  POLLING_RATE_SIGN							(0x5E)               //表决轮询码（五键评级，最后一次有效，需要签到）
 
 #define  POLLING_VOTECUSTOM_F_2_S					(0x60)               //两键自定义表决，第一次有效，需要签到
 #define  POLLING_VOTECUSTOM_F_2						(0x61)               //两键自定义表决，第一次有效，不需要签到
 #define  POLLING_VOTECUSTOM_L_2_S					(0x62)               //两键自定义表决，最后一次有效，需要签到
 #define  POLLING_VOTECUSTOM_L_2						(0x63)               //两键自定义表决，最后一次有效，不需要签到
+
 #define  POLLING_VOTECUSTOM_F_3_S					(0x64)               //三键自定义表决，第一次有效，需要签到
 #define  POLLING_VOTECUSTOM_F_3						(0x65)               //三键自定义表决，第一次有效，不需要签到
 #define  POLLING_VOTECUSTOM_L_3_S					(0x66)               //三键自定义表决，最后一次有效，需要签到
 #define  POLLING_VOTECUSTOM_L_3						(0x67)               //三键自定义表决，最后一次有效，不需要签到
+
 #define  POLLING_VOTECUSTOM_F_4_S					(0x68)               //四键自定义表决，第一次有效，需要签到
 #define  POLLING_VOTECUSTOM_F_4						(0x69)               //四键自定义表决，第一次有效，不需要签到
 #define  POLLING_VOTECUSTOM_L_4_S					(0x6A)               //四键自定义表决，最后一次有效，需要签到
 #define  POLLING_VOTECUSTOM_L_4						(0x6B)               //四键自定义表决，最后一次有效，不需要签到
+
 #define  POLLING_VOTECUSTOM_F_5_S					(0x6C)               //五键自定义表决，第一次有效，需要签到
 #define  POLLING_VOTECUSTOM_F_5						(0x6D)               //五键自定义表决，第一次有效，不需要签到
 #define  POLLING_VOTECUSTOM_L_5_S					(0x6E)               //五键自定义表决，最后一次有效，需要签到
 #define  POLLING_VOTECUSTOM_L_5						(0x6F)               //五键自定义表决，最后一次有效，不需要签到
 
 #define  POLLING_SATISFACTION						(0x70)               //表决轮询码（三键满意度，最后一次有效，不需要签到）
-#define  POLLING_SATISFACTION_SIGN					(0x71)               //表决轮询码 （三键满意度，第一次有效，需要签到）
-#define  POLLING_SATISFACTION_F						(0x72)               //表决轮询码 （三键满意度，第一次有效，不需要签到）
-#define  POLLING_SATISFACTION_FSIGN					(0x73)               //表决轮询码（三键满意度，最后一次有效，需要签到）
+#define  POLLING_SATISFACTION_F						(0x71)               //表决轮询码 （三键满意度，第一次有效，不需要签到）
+#define  POLLING_SATISFACTION_FSIGN					(0x72)               //表决轮询码（三键满意度，最后一次有效，需要签到）
+#define  POLLING_SATISFACTION_SIGN					(0x73)               //表决轮询码 （三键满意度，第一次有效，需要签到）
 
 
 /* 前置字段      PC_MSG PC_EDIT_ID */
@@ -313,7 +318,7 @@
 #define SetUnitMICSensitivity_MtoU_D				(36)  	//设置单元机MIC灵敏度
 #define RepReadUnitMICSensitivity_UtoM_D 			(37)  	//回复PC读取MIC灵敏度
 #define SetUnitMICEQ_MtoU_D 						(38)  	//PC设置单元机EQ
-#define SetUnitChannel_MtoU_G 						(39)  	//设置单元机通道数
+#define RepReadUnitMICEQ_UtoM_D 					(39)  	//回复PC读取单元机EQ
 #define PollUnitl_MtoU_D 							(40)  	//主机轮询
 #define RepPollUnitl_UtoM_D 						(41)  	//轮询应答（会议模式para1高半字节有效 ；签到模式para1底半字节有效；表决模式para2有效 ）
 #define SetUnitPrintMsg_MtoU_G						(42)	//设置单元机显示短\长消息

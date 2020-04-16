@@ -8,11 +8,15 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+/* WIFI单元ID转换   ，WIFI单元ID从0x3000开始 */
+#define WIFI_ID(_id)									(_id + WIFI_UNIT_START_ID)
+
 
 /* 无线单元发送模式 */
 typedef enum {
     kMode_Wifi_Unitcast,
     kMode_Wifi_Multicast,
+    kMode_Wifi_UrgMulticast,
 } WifiSendMode_EN;
 
 

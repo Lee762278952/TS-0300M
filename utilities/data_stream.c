@@ -17,7 +17,6 @@
 #include "data_stream.h"
 #include "ram.h"
 #include "string.h"
-#include "log.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -132,7 +131,7 @@ static uint32_t DataStream_Write(DataStreamHandler_S *streamHandler,const uint8_
 		cntAbaondon++;
   	}else{
   		if(cntAbaondon != 0){
-			Log.e("!!!Stream is full and abandon data %d times !!!\r\n",cntAbaondon);
+			printf("!!!Stream is full and abandon data %d times !!!\r\n",cntAbaondon);
 			cntAbaondon = 0;
 		}
 	}

@@ -18,6 +18,10 @@
 #include "stdio.h"
 #include "ctype.h"
 
+/* HAL */
+#include "hal_uart.h"
+#include "hal_gpio.h"
+
 /* OS */
 #include "FreeRTOS.h"
 #include "timers.h"
@@ -26,18 +30,16 @@
 #include "lwip\sys.h"
 #include "mdns.h"
 
-/* HAL */
-#include "hal_uart.h"
-#include "hal_gpio.h"
-
-/* API */
-#include "network.h"
-#include "ram.h"
+/* GLOBAL */
+#include "log.h"
 
 /* APP */
 #include "global_config.h"
 #include "external_ctrl.h"
 #include "conference.h"
+#include "network.h"
+#include "ram.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -61,6 +63,9 @@
 /* 任务堆栈大小及优先级 */
 #define EXTERNAL_CTRL_TASK_STACK_SIZE				(1024)
 #define EXTERNAL_CTRL_TASK_PRIORITY					(12)
+
+/* 心跳检测运行间隔(ms) */
+#define HEARTBEAT_MONITOR_INTERVAL					(1000)
 
 /* 协议指令数据缓存大小 */
 #define EXTERNAL_CTRL_DATA_RECEIVE_BUF_SIZE			(260)
@@ -107,48 +112,58 @@ static void ExternalCtrl_TransmitByByte(EXE_DEST dest, uint8_t *data, uint16_t l
 static bool ExternalCtrl_ConnectState(EXE_DEST dest);
 
 /* 内部调用 */
-
+static void ExternalCtrl_HeartbeatMonitor(TimerHandle_t xTimer);
 static void ExternalCtrl_EthStaListener(bool sta);
 static DataPack_S *ExternalCtrl_FetchDataFromNetBuf(Network_DataBuf_S *taskBuf);
 static void ExternalCtrl_NotifyConference(NotifySrcType_EN nSrc, ConfProtocol_S *prot);
 static void ExternalCtrl_NotifyConferenceWithExData(NotifySrcType_EN nSrc, ConfProtocol_S *prot, uint16_t exLen, uint8_t *exData);
 static void ExternalCtrl_ReplyHeartbeat(EXE_DEST dest);
 static void ExternalCtrl_ReplyQuery(EXE_DEST dest, uint8_t para);
+static void PcCtrl_ProcessTaskReset(void);
+
 static void UartCtrl_UartCallback(uint8_t count,void *para);
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 /* 网络参数变量 */
-static NETWORK_IP hostIp;
-static NETWORK_GW hostGw;
-static NETWORK_MASK hostMask;
-static NETWORK_PORT	hostPort;
+static NETWORK_IP HostIp;
+static NETWORK_GW HostGw;
+static NETWORK_MASK HostMask;
+static NETWORK_PORT	HostPort;
 
 /* 网线连接检测标志 */
-static bool isEthConnected;
+static bool IsEthConnected;
 
 /* 网线连接检测标志 */
-static bool isPcCtrlEnable;
-static bool isWebCtrlEnable;
+static bool IsPcCtrlEnable;
+static bool IsWebCtrlEnable;
 //static bool isUartCtrlEnable;
 
+/* 心跳计数 */
+static uint8_t PcHeartbeatCnt;
+static uint8_t WebHeartbeatCnt;
+
+/* 功能任务句柄 */
+static TaskHandle_t PcTaskHandler;
+
 /* 网络任务控制句柄 */
-static Network_TaskHandler_S *pcNetTaskHandler;
-static Network_TaskHandler_S *webNetTaskHandler;
+static Network_TaskHandler_S *PcNetTaskHandler;
+static Network_TaskHandler_S *WebNetTaskHandler;
 
 /* 串口控制句柄 */
 static HAL_UartHandler_S UartCtrltHandler;
 
+/* 心跳检测定时器 */
+static TimerHandle_t HeartbeatMonitor;
 
 /* 控制指令数据中捡取指令数据包 */
-static DataPack_S fetchDataPack;
+static DataPack_S FetchDataPack;
 /* 控制指令处理信号量 */
 static SemaphoreHandle_t CtrlProcessSemaphore;
 
 /* 串口接收信号量 */
 static SemaphoreHandle_t UartRecvSemaphore;
-
 
 /* 网页文件 */
 extern const HTTPSRV_FS_DIR_ENTRY httpsrv_fs_data[];
@@ -178,16 +193,16 @@ static AppTask_S ConfigTask = {
 
 static AppTask_S PcCtrlProcess = {
 	.task = PcCtrl_ProcessTask,
-	.name = "ExternalCtrl.PcCtrlProcess",	
+	.name = "App.ExternalCtrl.PcCtrlProcess",	
 	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
 	.para = null,
 	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
-	.handle = null
+	.handle = &PcTaskHandler
 };
 
 static AppTask_S WebCtrlProcess = {
 	.task = WebCtrl_ProcessTask,
-	.name = "ExternalCtrl.WebCtrlProcess",	
+	.name = "App.ExternalCtrl.WebCtrlProcess",	
 	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
 	.para = null,
 	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
@@ -196,7 +211,7 @@ static AppTask_S WebCtrlProcess = {
 
 static AppTask_S UartCtrlProcess = {
 	.task = UartCtrl_ProcessTask,
-	.name = "ExternalCtrl.UartCtrlProcess",	
+	.name = "App.ExternalCtrl.UartCtrlProcess",	
 	.stack = EXTERNAL_CTRL_TASK_STACK_SIZE,
 	.para = null,
 	.prio = EXTERNAL_CTRL_TASK_PRIORITY,
@@ -216,7 +231,6 @@ static AppLauncher_S Launcher = {
 
 
 ExternalCtrl_S ExternalCtrl = {
-//    .launch = ExternalCtrl_Launch,
 	.launcher = &Launcher,
 
     .transmit = ExternalCtrl_Transmit,
@@ -231,22 +245,6 @@ ExternalCtrl_S ExternalCtrl = {
 /*******************************************************************************
  * Code
  ******************************************************************************/
-/**
-* @Name  		ExternalCtrl_Launch
-* @Author  		KT
-* @Description
-* @para
-*
-*
-* @return
-*/
-//static void ExternalCtrl_Launch(void)
-//{
-//    if (xTaskCreate(ExternalCtrl_ConfigTask, "ExternalCtrlLaunchTask", EXTERNAL_CTRL_TASK_STACK_SIZE, null, EXTERNAL_CTRL_TASK_PRIORITY, null) != pdPASS) {
-//        Log.e("create launch task error\r\n");
-//    }
-//}
-
 
 /**
 * @Name  		ExternalCtrl_ConfigTask
@@ -262,7 +260,7 @@ static void ExternalCtrl_ConfigTask(void *pvParameters)
     Network_EthPara_S *ethPara;
     SysCfg_S *sysCfg;
 
-    isEthConnected = false;
+    IsEthConnected = false;
 
     ethPara = MALLOC(sizeof(Network_EthPara_S));
     ethPara->mac = MALLOC(sizeof(Network_Mac_S));
@@ -270,24 +268,28 @@ static void ExternalCtrl_ConfigTask(void *pvParameters)
     /* 从数据库读取网络参数 */
     sysCfg = (SysCfg_S *)Database.getInstance(kType_Database_SysCfg);
 
-    memcpy(&hostIp,sysCfg->ip,NETWORK_IP_SIZE);
-    memcpy(&hostGw,sysCfg->gateWay,NETWORK_IP_SIZE);
-    memcpy(&hostMask,sysCfg->mask,NETWORK_IP_SIZE);
+    memcpy(&HostIp,sysCfg->ip,NETWORK_IP_SIZE);
+    memcpy(&HostGw,sysCfg->gateWay,NETWORK_IP_SIZE);
+    memcpy(&HostMask,sysCfg->mask,NETWORK_IP_SIZE);
 
     /* 网口初始化 */
     ethPara->index = NETWORK_ENET_TYPE;
     ethPara->type = NETWORK_TYPE;
-    NETWORK_SET_ADDR(ethPara->ip,hostIp.addr0,hostIp.addr1,hostIp.addr2,hostIp.addr3);
-    NETWORK_SET_ADDR(ethPara->gateway,hostGw.addr0,hostGw.addr1,hostGw.addr2,hostGw.addr3);
-    NETWORK_SET_ADDR(ethPara->netmask,hostMask.addr0,hostMask.addr1,hostMask.addr2,hostMask.addr3);
-    hostPort = EX_CTRL_PORT_DEF;
+    NETWORK_SET_ADDR(ethPara->ip,HostIp.addr0,HostIp.addr1,HostIp.addr2,HostIp.addr3);
+    NETWORK_SET_ADDR(ethPara->gateway,HostGw.addr0,HostGw.addr1,HostGw.addr2,HostGw.addr3);
+    NETWORK_SET_ADDR(ethPara->netmask,HostMask.addr0,HostMask.addr1,HostMask.addr2,HostMask.addr3);
+    HostPort = EX_CTRL_PORT_DEF;
 
     /* MAC地址根据IP变化（避免双机状态MAC冲突） */
-    NETWORK_SET_MAC(ethPara->mac,0x02,0x12,hostIp.addr0,hostIp.addr1,hostIp.addr2,hostIp.addr3);
+    NETWORK_SET_MAC(ethPara->mac,0x02,0x12,HostIp.addr0,HostIp.addr1,HostIp.addr2,HostIp.addr3);
 
     ethPara->ethStaListener = ExternalCtrl_EthStaListener;
 
+	/* 配置网络 */
     Network.ethConfig(ethPara);
+
+	/* 初始化定时器 */
+	HeartbeatMonitor = xTimerCreate("Heartbeat",HEARTBEAT_MONITOR_INTERVAL,pdTRUE,null,ExternalCtrl_HeartbeatMonitor);
 
     /* 初始化互斥信号量 —— 多任务互锁 */
     CtrlProcessSemaphore = xSemaphoreCreateMutex();
@@ -295,7 +297,7 @@ static void ExternalCtrl_ConfigTask(void *pvParameters)
     UartRecvSemaphore = xSemaphoreCreateBinary();
 
 
-	isPcCtrlEnable = isWebCtrlEnable = false;
+	IsPcCtrlEnable = IsWebCtrlEnable = false;
 
 
 	Log.i("External control configuration finish ... \r\n");
@@ -303,6 +305,27 @@ static void ExternalCtrl_ConfigTask(void *pvParameters)
 
     vTaskDelete(null);
 }
+
+
+/**
+* @Name  		ExternalCtrl_HeartbeatMonitor
+* @Author  		KT
+* @Description
+* @para
+*
+*
+* @return
+*/
+static void ExternalCtrl_HeartbeatMonitor(TimerHandle_t xTimer){
+
+	if(IsPcCtrlEnable){
+		if(PcHeartbeatCnt++ > 5){
+			Log.d("Pc connect time out \r\n");
+			PcCtrl_ProcessTaskReset();
+		}
+	}
+}
+
 
 /**
 * @Name  		ExternalCtrl_EthStaListener
@@ -315,9 +338,9 @@ static void ExternalCtrl_ConfigTask(void *pvParameters)
 */
 static void ExternalCtrl_EthStaListener(bool sta)
 {
-    isEthConnected = sta;
+    IsEthConnected = sta;
 	if(!sta){
-		isPcCtrlEnable = isWebCtrlEnable = false;
+		IsPcCtrlEnable = IsWebCtrlEnable = false;
 	}
     Log.i("External control (net port) %s \r\n",sta ? "connected" : "disconnected");
 }
@@ -334,7 +357,7 @@ static void ExternalCtrl_EthStaListener(bool sta)
 */
 static DataPack_S *ExternalCtrl_FetchDataFromBuf(uint8_t *data,uint32_t len)
 {
-    DataPack_S *dataPack = &fetchDataPack;
+    DataPack_S *dataPack = &FetchDataPack;
     uint16_t i;
 //	uint8_t *data;
 
@@ -403,6 +426,10 @@ static void ExternalCtrl_DataProcess(NotifySrcType_EN nSrc, ExCtrlData_S *ctrlDa
 
     memcpy(&prot,&ctrlData->prot,sizeof(ConfProtocol_S));
     prot.id = lwip_htons(prot.id);
+
+	if(nSrc & kType_NotiSrc_PC){
+		PcHeartbeatCnt = 0;
+	}
 
     /* 将需要频繁操作或快速回复参数的操作放在接收线程直接处理，其他的发送给会议任务线程处理 */
     /* 回复心跳 */
@@ -489,13 +516,13 @@ static void ExternalCtrl_TransmitByByte(EXE_DEST dest, uint8_t *data, uint16_t l
     taskBuf->len = len;
     taskBuf->data = data;
 
-    if((dest & kType_NotiSrc_PC) && isPcCtrlEnable)
-        Network.transmit(pcNetTaskHandler,taskBuf);
+    if((dest & kType_NotiSrc_PC) && IsPcCtrlEnable)
+        Network.transmit(PcNetTaskHandler,taskBuf);
 
-    if((dest & kType_NotiSrc_Web) && isWebCtrlEnable) {
+    if((dest & kType_NotiSrc_Web) && IsWebCtrlEnable) {
         taskBuf->webType = tWebsocket;
         taskBuf->wsType = WS_DATA_BINARY;
-        Network.transmit(webNetTaskHandler,taskBuf);
+        Network.transmit(WebNetTaskHandler,taskBuf);
     }
 
     if(dest & kType_NotiSrc_UartCtrl) {
@@ -523,8 +550,8 @@ static void ExternalCtrl_TransmitWithExData(EXE_DEST dest, ConfProtocol_S *prot,
 
     ERR_CHECK(prot != null,return);
     ERR_CHECK(!(exLen != 0 && exData == null),return);
-    ERR_CHECK(((dest & kType_NotiSrc_PC) && isPcCtrlEnable) ||   \
-              ((dest & kType_NotiSrc_Web) && isWebCtrlEnable) ||  \
+    ERR_CHECK(((dest & kType_NotiSrc_PC) && IsPcCtrlEnable) ||   \
+              ((dest & kType_NotiSrc_Web) && IsWebCtrlEnable) ||  \
               (dest & kType_NotiSrc_UartCtrl),return);
 
     dataLen = exLen + CTRL_CMD_MIN_LEN;
@@ -619,9 +646,9 @@ static bool ExternalCtrl_ConnectState(EXE_DEST dest)
     bool state = false;
 
 	if(dest & kType_NotiSrc_PC)
-		state = isPcCtrlEnable;
+		state = IsPcCtrlEnable;
 	else if(dest & kType_NotiSrc_Web)
-		state = isWebCtrlEnable;
+		state = IsWebCtrlEnable;
 
 	return state;
 }
@@ -638,7 +665,7 @@ static bool ExternalCtrl_ConnectState(EXE_DEST dest)
 */
 static void PcCtrl_TcpStaListener(bool sta)
 {
-    isPcCtrlEnable = sta;
+    IsPcCtrlEnable = sta;
     Log.i("PC control is %s \r\n",sta ? "online" : "offline");
 }
 
@@ -662,7 +689,7 @@ static void PcCtrl_ProcessTask(void *pvParameters)
 	Log.i("PC control process task start!!\r\n");
 
 	 /* 等待网络连接 */
-    while(!isEthConnected) {
+    while(!IsEthConnected) {
         DELAY(500);
     }
 
@@ -673,15 +700,20 @@ static void PcCtrl_ProcessTask(void *pvParameters)
 
     /* 初始化网络任务 */
     taskPara = MALLOC(sizeof(Network_TcpTaskPara_S));
-    taskPara->port = hostPort;
+    taskPara->port = HostPort;
     taskPara->type = tServer;
     taskPara->tcpListener = PcCtrl_TcpStaListener;
-    pcNetTaskHandler = Network.creatTask(NETWORK_ENET_TYPE,tTcp,taskPara);
+
+    PcNetTaskHandler = Network.creatTask(NETWORK_ENET_TYPE,tTcp,taskPara);
+
+	/* 启动定时器 */
+	xTimerStart(HeartbeatMonitor, 0);
 
     while(1) {
-        Network.receive(pcNetTaskHandler,taskBuf,MAX_NUM);
+        Network.receive(PcNetTaskHandler,taskBuf,MAX_NUM);
 
         xSemaphoreTake(CtrlProcessSemaphore, MAX_NUM);
+		/* 捡包 */
         dataPack = ExternalCtrl_FetchDataFromNetBuf(taskBuf);
         if(dataPack->packNum > 0) {
             for(index = 0; index < dataPack->packNum; index++) {
@@ -694,6 +726,31 @@ static void PcCtrl_ProcessTask(void *pvParameters)
         memset(taskBuf->data,0,EXTERNAL_CTRL_DATA_RECEIVE_BUF_SIZE);
 
     }
+}
+
+/**
+* @Name  		PcCtrl_ProcessTaskReset
+* @Author  		KT
+* @Description
+* @para
+*
+*
+* @return
+*/
+static void PcCtrl_ProcessTaskReset(void){
+	/* 关闭网络任务 */
+	Network.destoryTask(PcNetTaskHandler);
+
+	/* 关闭数据处理任务 */
+	vTaskDelete(PcTaskHandler);
+		
+	PcHeartbeatCnt = 0;
+	IsPcCtrlEnable = false;
+			
+	if (xTaskCreate(PcCtrlProcess.task, PcCtrlProcess.name, PcCtrlProcess.stack, PcCtrlProcess.para, PcCtrlProcess.prio, PcCtrlProcess.handle) != pdPASS)
+	{
+		Log.e("Function task \"%s\" creat error\r\n", PcCtrlProcess.name);
+	}
 }
 
 
@@ -710,7 +767,7 @@ static void PcCtrl_ProcessTask(void *pvParameters)
 */
 static void WebCtrl_WsStaListener(bool sta)
 {
-    isWebCtrlEnable = sta;
+    IsWebCtrlEnable = sta;
     Log.i("Websocket is %s \r\n",sta ? "online" : "offline");
 }
 
@@ -733,7 +790,7 @@ static void WebCtrl_ProcessTask(void *pvParameters)
 	Log.i("WEB control process task start!!\r\n");
 
 	 /* 等待网络连接 */
-    while(!isEthConnected) {
+    while(!IsEthConnected) {
         DELAY(500);
     }
 
@@ -762,10 +819,10 @@ static void WebCtrl_ProcessTask(void *pvParameters)
     taskPara->websocket.wsListener = WebCtrl_WsStaListener;
 
     /* 初始化网络任务 */
-    webNetTaskHandler = Network.creatTask(NETWORK_ENET_TYPE,tHttp,taskPara);
+    WebNetTaskHandler = Network.creatTask(NETWORK_ENET_TYPE,tHttp,taskPara);
 
     while(1) {
-        Network.receive(webNetTaskHandler,taskBuf,MAX_NUM);
+        Network.receive(WebNetTaskHandler,taskBuf,MAX_NUM);
 
         if(taskBuf->webType == tWebsocket && taskBuf->wsType == WS_DATA_BINARY) {
             xSemaphoreTake(CtrlProcessSemaphore, MAX_NUM);

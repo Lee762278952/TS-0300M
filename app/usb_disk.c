@@ -16,7 +16,10 @@
 /*******************************************************************************
  * includes
  ******************************************************************************/
+/* CLIB */
 #include "string.h"
+
+/* SDK */
 #include "board.h"
 #include "usb_host_config.h"
 #include "usb_host.h"
@@ -26,8 +29,13 @@
 #include "ff.h"
 #include "diskio.h"
 #include "host_msd_fatfs.h"
-#include "ram.h"
+
+/* GLOBAL */
 #include "log.h"
+
+/* APP */
+#include "ram.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -235,7 +243,7 @@ static uint8_t Streambuff[USB_MAX_DATA_STREAM_NUM][USB_STREAM_BUF_SIZE];
 
 static AppTask_S HostEhci = {
 	.task = USB_HostEhciTask,
-	.name = "UsbDisk.HostEhci",	
+	.name = "App.UsbDisk.HostEhci",	
 	.stack = USB_HOST_EHCI_TASK_STACK,
 	.para = &UsbHostHandle,
 	.prio = USB_HOST_EHCI_TASK_PRIO,

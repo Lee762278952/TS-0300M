@@ -24,12 +24,13 @@
 #include "timers.h"
 #include "queue.h"
 
-/* API */
-#include "ram.h"
+/* GLOBAL */
+#include "log.h"
 
 /* APP */
 #include "screen.h"
 #include "conference.h"
+#include "ram.h"
 
 /*******************************************************************************
  * Definitions
@@ -109,7 +110,7 @@ static const uint8_t SetLanguage[] = {0x5A,0xA5,0x03,0x80,0x71,0x00};
 
 static AppTask_S UartDataProcess = {
     .task = Screen_UartDataProcessTask,
-    .name = "Screen.UartDataProcess",
+    .name = "App.Screen.UartDataProcess",
     .stack = SCREEN_TASK_STACK_SIZE,
     .para = null,
     .prio = SCREEN_TASK_PRIORITY,

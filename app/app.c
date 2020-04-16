@@ -32,8 +32,7 @@
 
 /* GLOBAL */
 #include "global_config.h"
-
-
+#include "log.h"
 
 /* OS */
 #include "FreeRTOS.h"
@@ -186,7 +185,7 @@ int main(void)
     APP_PRINT_DEV_MSG();
 
     /* 开启任务线程 */
-    if (xTaskCreate(App_LauncherTask, "Launcher", LAUNCHER_STACK_SIZE, null, LAUNCHER_PRIORITY, NULL) != pdPASS) {
+    if (xTaskCreate(App_LauncherTask, "App.Launcher", LAUNCHER_STACK_SIZE, null, LAUNCHER_PRIORITY, NULL) != pdPASS) {
         printf("create Launcher task error\r\n");
     }
 
@@ -314,7 +313,7 @@ static void App_LaunchFunc(void){
 */
 static void App_LauncherTask(void *pvParameters)
 {
-
+//	char listBuf[1000];
 //	taskENTER_CRITICAL();
 
     Log.init();
@@ -331,6 +330,10 @@ static void App_LauncherTask(void *pvParameters)
 
 	App_LaunchFunc();
 	Log.i("Application launch finish ... \r\n\r\n");
+
+//	DELAY(5000);
+//	vTaskList(listBuf);
+//	Log.d("Task list : \r\n%s\r\n",listBuf);
 
     vTaskDelete(null);
     while(1);

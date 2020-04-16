@@ -24,12 +24,13 @@
 #include "timers.h"
 #include "queue.h"
 
-/* API */
-#include "ram.h"
+/* GLOBAL */
+#include "log.h"
 
 /* APP */
 #include "slave_mcu.h"
 #include "conference.h"
+#include "ram.h"
 
 /*******************************************************************************
  * Definitions
@@ -91,7 +92,7 @@ static uint8_t RecvBuf[UART_RECV_BUF_SIZE];
 
 static AppTask_S UartDataProcess = {
 	.task = SlaveMcu_UartDataProcessTask,
-	.name = "SlaveMcu.UartDataProcess",	
+	.name = "App.SlaveMcu.UartDataProcess",	
 	.stack = SLAVE_MCU_TASK_STACK_SIZE,
 	.para = null,
 	.prio = SLAVE_MCU_TASK_PRIORITY,

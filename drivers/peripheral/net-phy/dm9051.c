@@ -437,7 +437,7 @@ status_t Dm9051_Init(LPSPI_Type *base,uint32_t pcs,uint8_t *mac,bool broadcast)
                     Dm9051_SpiRead(base,pcs,DM9051_PIDH) << 24);
 
     if(id != 0x90510a46) {
-        Log.e("DM9051 id error: 0x%x \r\n", id);
+        printf("\r\nDM9051 id error: 0x%x \r\n", id);
 		return kStatus_Fail;
     }
     /* Setting Auto Mode */
@@ -589,10 +589,10 @@ uint16_t Dm9051_Receive(LPSPI_Type *base,uint32_t pcs,uint8_t *data)
         if ((rx_status & 0xbf00) || (rx_len < 0x40) || (rx_len > DM9051_PKT_MAX) ) {
 
             if (rx_status & 0x8000) {
-                PRINTF("rx length error \r\n");
+                printf("\r\nrx length error \r\n");
             }
             if (rx_len > DM9051_PKT_MAX) {
-                PRINTF("rx length too big \r\n");
+                printf("\r\nrx length too big \r\n");
             }
         }
     }

@@ -30,7 +30,7 @@
 #include "adau1466_2_IC_1_REG.h"
 #endif
 
-#include "log.h"
+//#include "log.h"
 
 
 #define SIGMA_WRITE_REGISTER_BLOCK(dev_addr,reg_addr,size,data)    	I2C_ADAU1466_Write(I2C_ADAU1466_BASE,dev_addr,reg_addr,size,data)

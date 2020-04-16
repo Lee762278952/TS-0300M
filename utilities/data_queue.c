@@ -16,7 +16,6 @@
  ******************************************************************************/
 #include "data_queue.h"
 #include "ram.h"
-#include "log.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -400,10 +399,10 @@ void DataQueue_ErgodicDebug(DataQueueHandler_S *handler){
 	if(queue == null)
 		return;
 	
-    Log.d("Queue itemSize = %d , totalLen = %d\r\n",queue->itemSize,queue->totalLen);
+    printf("Queue itemSize = %d , totalLen = %d\r\n",queue->itemSize,queue->totalLen);
 		
 	if(!queue->qLength){
-		Log.e("Queue is empty!!\r\n");
+		printf("Queue is empty!!\r\n");
 		return;
 	}
 	
@@ -411,7 +410,7 @@ void DataQueue_ErgodicDebug(DataQueueHandler_S *handler){
 	
 	for(i=0;i<queue->qLength;i++){
 		uint8_t *temp;
-		Log.d("item index = %d , item content : ",qItem->index);
+		printf("item index = %d , item content : ",qItem->index);
 		temp = qItem->item;
 		for(j = 0;j<queue->itemSize;j++)
 			printf("0x%X ",temp[j]);
@@ -422,132 +421,3 @@ void DataQueue_ErgodicDebug(DataQueueHandler_S *handler){
 #endif
 
 
-#if 0
-/**
-* @Name  		DataQueue_Creat
-* @Author  		KT
-* @Description 	
-* @para    		
-*				
-*
-* @return		
-*/
-static DataQueueHandler_S *DataQueue_Creat(uint32_t queueLen,uint32_t itemSize){
-	QueueHandler_S *queue;
-	
-	if(itemSize == 0 || queueLen == 0)
-		return null;
-	
-	queue = MALLOC(sizeof(QueueHandler_S));
-	
-	queue->itemSize = itemSize;
-	queue->queueLen = queueLen;
-	
-	queue->dataStream = DataStream.creat(itemSize * queueLen);
-	
-	return (DataQueueHandler_S *)queue;
-}
-
-/**
-* @Name  		DataQueue_Enter
-* @Author  		KT
-* @Description 	
-* @para    		
-*				
-*
-* @return		
-*/
-static bool DataQueue_Enter(DataQueueHandler_S *handler, void *item){
-	QueueHandler_S *queue = (QueueHandler_S *)handler;;
-	
-	if(queue == null || item == null || queue->dataStream->emptySize == 0)
-		return false;
-	
-	if(DataStream.write(queue->dataStream,item,queue->itemSize) == queue->itemSize)
-		return true;
-	else
-		return false;
-}
-
-
-/**
-* @Name  		DataQueue_Exit
-* @Author  		KT
-* @Description 	
-* @para    		
-*				
-*
-* @return		
-*/
-static bool DataQueue_Exit(DataQueueHandler_S *handler, void *item){
-	QueueHandler_S *queue = (QueueHandler_S *)handler;;
-	
-	if(queue == null || item == null || queue->dataStream->filledSize == 0)
-		return false;
-	
-	if(DataStream.read(queue->dataStream,item,queue->itemSize) == queue->itemSize)
-		return true;
-	else
-		return false;
-}
-
-
-/**
-* @Name  		DataQueue_GetSize
-* @Author  		KT
-* @Description 	
-* @para    		
-*				
-*
-* @return		
-*/
-static uint32_t DataQueue_GetSize(DataQueueHandler_S *handler){
-	QueueHandler_S *queue = (QueueHandler_S *)handler;;
-	
-	if(queue == null)
-		return null;
-	
-	return (DataStream.fillSize(queue->dataStream)/queue->itemSize);
-}
-
-/**
-* @Name  		DataQueue_Find
-* @Author  		KT
-* @Description 	
-* @para    		
-*				
-*
-* @return		
-*/
-static void DataQueue_Search(DataQueueHandler_S *handler,void *item){
-	QueueHandler_S *queue = (QueueHandler_S *)handler;
-	void *array;
-	
-	if(queue == null || item == null)
-		return;
-		
-	array = MALLOC(queue->dataStream->filledSize);
-	
-	DataStream.getData(queue->dataStream,array);
-	
-	
-}
-
-/**
-* @Name  		DataQueue_ItemArray
-* @Author  		KT
-* @Description 	
-* @para    		
-*				
-*
-* @return		
-*/
-static void DataQueue_ItemArray(DataQueueHandler_S *handler,void *array){
-	QueueHandler_S *queue = (QueueHandler_S *)handler;;
-	
-	if(queue == null || array == null)
-		return;
-		
-	DataStream.getData(queue->dataStream,array);
-}
-#endif

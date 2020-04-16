@@ -18,13 +18,15 @@
 /* HAL */
 #include "hal_spi_flash.h"
 
-/* API */
-#include "ram.h"
+/* GLOBAL */
 #include "log.h"
 
 /* APP */
 #include "conference.h"
 #include "database.h"
+#include "ram.h"
+
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -104,7 +106,7 @@ static UnitCfg_S *WiredCfg = (UnitCfg_S *)WiredCfgSpace;
 
 static AppTask_S Saver = {
 	.task = Database_SaverTask,
-	.name = "Database.Saver",	
+	.name = "App.Database.Saver",	
 	.stack = DATABASE_TASK_STACK_SIZE,
 	.para = null,
 	.prio = DATABASE_TASK_PRIORITY,

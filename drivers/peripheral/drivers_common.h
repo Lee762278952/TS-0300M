@@ -3,7 +3,7 @@
 
 #include "MIMXRT1062.h"
 #include "pin_mux.h"
-#include "log.h"
+//#include "log.h"
 #include "global_config.h"
 /*******************************************************************************
  * Definitions

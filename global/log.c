@@ -13,7 +13,11 @@
 /*******************************************************************************
  * includes
  ******************************************************************************/
- /* OS */
+/* CLIB */
+#include "stdarg.h"
+#include "stdio.h"
+
+/* OS */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -22,15 +26,8 @@
 #include "global_config.h"
 #include "log.h"
 
-#include "stdarg.h"
-
 /* SDK */
-//#include "fsl_debug_console.h"
-//#include "fsl_debug_console_conf.h"
-//#include "fsl_str.h"
 #include "fsl_lpuart.h"
-
-#include <stdio.h>
 
 /*******************************************************************************
  * Definitions

@@ -253,6 +253,9 @@ typedef struct {
 
 		/* WIFIÒôÆµÏÂ´« */
 		bool wifiAudDownward;
+
+		/* »ð¾¯ÐÅºÅ */
+		bool fireAlarm;
 		
     } state;
 

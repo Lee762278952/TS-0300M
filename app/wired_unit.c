@@ -18,13 +18,15 @@
 #include "FreeRTOS.h"
 #include "timers.h"
 
-/* API */
-#include "network.h"
-#include "ram.h"
+/* GLOBAL */
+#include "log.h"
 
 /* APP */
 #include "wired_unit.h"
 #include "conference.h"
+#include "network.h"
+#include "ram.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -118,10 +120,13 @@ static NETWORK_MAC unitMac;
 static Network_TaskHandler_S *netTaskHandler;
 
 /* 网路连接标志 */
-static bool isEthConnected;
+static bool IsEthConnected;
 
 /* 发送队列 */
 static QueueHandle_t SendQueue;
+
+/* 轮询定时器 */
+static TimerHandle_t pollingTimer;
 
 /* 单元信息 */
 static UnitInfo_S *unitInfo;
@@ -138,16 +143,13 @@ static const uint8_t VotePollingCode[] =
 	POLLING_SATISFACTION_FSIGN,POLLING_SATISFACTION_F, POLLING_SATISFACTION_SIGN, POLLING_SATISFACTION, 
  };
 
-/* 轮询定时器 */
-static TimerHandle_t pollingTimer;
-
 
 /*******************************************************************************
  * Task & API
  ******************************************************************************/
 static AppTask_S ConfigTask = {
 	.task = WiredUnit_ConfigTask,
-	.name = "WiredUnit.Config",	
+	.name = "App.WiredUnit.Config",	
 	.stack = WIRED_UNIT_TASK_STACK_SIZE,
 	.para = null,
 	.prio = WIRED_UNIT_TASK_PRIORITY,
@@ -156,7 +158,7 @@ static AppTask_S ConfigTask = {
 
 static AppTask_S NetDataProcess = {
 	.task = WiredUnit_NetDataProcessTask,
-	.name = "WiredUnit.NetDataProcess",	
+	.name = "App.WiredUnit.NetDataProcess",	
 	.stack = WIRED_UNIT_TASK_STACK_SIZE,
 	.para = null,
 	.prio = WIRED_UNIT_TASK_PRIORITY,
@@ -165,7 +167,7 @@ static AppTask_S NetDataProcess = {
 
 static AppTask_S NetDataTransmit = {
 	.task = WiredUnit_NetDataTransmitTask,
-	.name = "WiredUnit.NetDataTransmit",	
+	.name = "App.WiredUnit.NetDataTransmit",	
 	.stack = WIRED_UNIT_TASK_STACK_SIZE,
 	.para = null,
 	.prio = WIRED_UNIT_TASK_PRIORITY,
@@ -205,7 +207,7 @@ static void WiredUnit_ConfigTask(void *pvParameters) {
     Network_EthPara_S *ethPara;
     Network_EthernetTaskPara_S *taskPara;
 
-    isEthConnected = false;
+    IsEthConnected = false;
 
     ethPara = MALLOC(sizeof(Network_EthPara_S));
     taskPara = MALLOC(sizeof(Network_EthernetTaskPara_S));
@@ -222,7 +224,7 @@ static void WiredUnit_ConfigTask(void *pvParameters) {
     Network.ethConfig(ethPara);
 
     /* 等待网络连接 */
-    while(!isEthConnected){
+    while(!IsEthConnected){
 		DELAY(100);
 	};
 
@@ -244,7 +246,7 @@ static void WiredUnit_ConfigTask(void *pvParameters) {
 	unitInfo = Conference.wiredUnitInfo();
 
 	/* 初始化发送队列 */
-	SendQueue = xQueueCreate(100, sizeof(void *));
+	SendQueue = xQueueCreate(256, sizeof(void *));
 
 
     /* 初始化轮询定时器 */
@@ -372,7 +374,7 @@ static void WiredUnit_PollingTimer(TimerHandle_t xTimer) {
 * @return
 */
 static void WiredUnit_EthStaListener(bool sta) {
-    isEthConnected = sta;
+    IsEthConnected = sta;
 }
 
 /**
@@ -397,7 +399,6 @@ static void WiredUnit_NetDataProcessTask(void *pvParameters) {
     taskBuf->maxLen = UNIT_DATA_RECEIVE_BUF_SIZE;
 	
     Log.i("Wired unit data process task start!!\r\n");
-
 	
 	xTimerStart(pollingTimer,0);
 	Log.i("Wired unit polling timer start!!\r\n");
@@ -420,6 +421,7 @@ static void WiredUnit_NetDataProcessTask(void *pvParameters) {
         /* 复制参数 */
         memcpy(&prot,&netData->prot,sizeof(ConfProtocol_S));
         prot.id = lwip_htons(prot.id);
+		netData->exLen = lwip_htons(netData->exLen);
         unitSrcMac = &taskBuf->srcMac;
 
         if(prot.id >= 1 && prot.id <= WIRED_UNIT_MAX_ONLINE_NUM) {
@@ -438,7 +440,7 @@ static void WiredUnit_NetDataProcessTask(void *pvParameters) {
 
 
                 /* 其他会议消息发送给会议任务处理 */
-                WiredUnit_NotifyConference(&prot);
+                WiredUnit_NotifyConferenceWithExData(&prot,netData->exLen,&netData->exDataHead);
                 goto clear_buf;
             } else {
                 /* 单元状态为离线 */

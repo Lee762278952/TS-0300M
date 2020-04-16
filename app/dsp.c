@@ -19,14 +19,15 @@
 /* HAL */
 #include "hal.h"
 
-/* API */
-#include "dsp.h"
+/* GLOBAL */
+#include "log.h"
+
 
 /* APP */
 #include "database.h"
 #include "ram.h"
+#include "dsp.h"
 
-#include "log.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -67,7 +68,7 @@ static void Dsp_SetPara(void);
 
 static AppTask_S ConfigTask = {
 	.task = Dsp_ConfigTask,
-	.name = "Dsp.Config",	
+	.name = "App.Dsp.Config",	
 	.stack = DSP_CONFIG_TASK_STACK_SIZE,
 	.para = null,
 	.prio = DSP_CONFIG_TASK_PRIORITY,
@@ -76,7 +77,7 @@ static AppTask_S ConfigTask = {
 
 static AppTask_S Monitor = {
 	.task = Dsp_MonitorTask,
-	.name = "Dsp.Monitor",	
+	.name = "App.Dsp.Monitor",	
 	.stack = DSP_MONITOR_TASK_STACK_SIZE,
 	.para = null,
 	.prio = DSP_MONITOR_TASK_PRIORITY,
@@ -150,8 +151,8 @@ static void Dsp_MonitorTask(void *pvParameters){
 			Dsp_SetPara();
 		}
 #else
-		vTaskSuspend(null);
 		DELAY(10000);
+		vTaskSuspend(null);
 #endif
 		
 		
@@ -194,6 +195,8 @@ static void Dsp_SetPara(void){
 		for(dspIn = 0;dspIn < 7;dspIn++){
 			Dsp.chInputSrc((DspOutput_E)dspOut,(DspInputSrc_E)dspIn,(DspVolume_E)(31 - sysCfg->dsp[dspOut].inputVol[dspIn]));
 		}
+
+		DELAY(10);
 	}
 
 	/* ≈‰÷√∆’Õ® ‰≥ˆ */
@@ -210,6 +213,8 @@ static void Dsp_SetPara(void){
 		for(dspIn = 0;dspIn < 7;dspIn++){
 			Dsp.chInputSrc((DspOutput_E)dspOut,(DspInputSrc_E)dspIn,(DspVolume_E)(31 - sysCfg->dsp[dspOut].inputVol[dspIn]));
 		}
+
+		DELAY(10);
 	}
 }
 
@@ -231,8 +236,6 @@ static void Dsp_ConfigTask(void *pvParameters){
 
 	Dsp_SetPara();
 	
-//	DELAY(3000);
-
 	Log.i("DSP configuration finish ... \r\n");
 
 #else
@@ -263,7 +266,8 @@ static void Dsp_Config(uint8_t dsp){
 			if(sta != kStatus_Success)
 				Log.e("DSP_1 init err (section = %d) , sta = %d ... \r\n",section,sta);
 			
-			DELAY(DSP_CFG_DELAY);
+			if(section < 4)
+				DELAY(DSP_CFG_DELAY);
 		}
 	}
 
@@ -274,7 +278,8 @@ static void Dsp_Config(uint8_t dsp){
 			if(sta != kStatus_Success)
 				Log.e("DSP_2 init err (section = %d) , sta = %d ... \r\n",section,sta);
 			
-			DELAY(DSP_CFG_DELAY);
+			if(section < 4)
+				DELAY(DSP_CFG_DELAY);
 		}
 	}
 	

@@ -14,17 +14,21 @@
 /*******************************************************************************
  * includes
  ******************************************************************************/
-/* clib */
+/* CLIB */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
 
+/* SDK */
+#include "fsl_gpio.h"
+#include "fsl_iomuxc.h"
+
 /* OS */
 #include "FreeRTOS.h"
 #include "timers.h"
 
-/* lwip */
+/* LWIP */
 #include "lwip/opt.h"
 #include "lwip/netif.h"
 #include "lwip/sys.h"
@@ -40,9 +44,11 @@
 #include "httpsrv.h"
 #include "mdns.h"
 
+/* GLOBAL */
+#include "log.h"
+
+/* APP */
 #include "ram.h"
-#include "fsl_gpio.h"
-#include "fsl_iomuxc.h"
 #include "network.h"
 /*******************************************************************************
  * Definitions
@@ -208,6 +214,8 @@ static void Network_Init(void);
 /* API */
 static void Network_EthConfig(Network_EthPara_S *para);
 static Network_TaskHandler_S *Network_CreatNetworkTask(Network_EthIndex_EN index,Network_TaskType_EN type,Network_TaskPara para);
+static void Network_DestoryNetworkTask(Network_TaskHandler_S *netHandler);
+
 static void Network_TaskReceive(Network_TaskHandler_S *handler,Network_DataBuf_S *buf,uint32_t waitTime);
 static void Network_TaskTransmit(Network_TaskHandler_S *handler,Network_DataBuf_S *buf);
 
@@ -288,11 +296,11 @@ static AppLauncher_S Launcher = {
 
 
 Network_S Network = {
-//	.init = Network_Init,
 	.launcher = &Launcher,
 
 	.ethConfig = Network_EthConfig,
 	.creatTask = Network_CreatNetworkTask,
+	.destoryTask = Network_DestoryNetworkTask,
 	.receive = Network_TaskReceive,
 	.transmit = Network_TaskTransmit,
 };
@@ -335,13 +343,19 @@ static void Network_Init(void)
 * @return		
 */
 static void Network_EthConfig(Network_EthPara_S *para){
+	char *taskName;
+
 	if(para == null)
 		return;
+
+	taskName = MALLOC(35);
+	sprintf(taskName,"Network.Config.Ethernet%d",para->index);
 		
-	if (xTaskCreate(Network_EthConfigTask, "Network_EthConfigTask", ETH_CONFIG_TASK_STACK, para, ETH_CONFIG_TASK_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(Network_EthConfigTask, taskName, ETH_CONFIG_TASK_STACK, para, ETH_CONFIG_TASK_PRIORITY, NULL) != pdPASS)
     {
         Log.e("create Network_EthConfigTask error\r\n");
     }
+	FREE(taskName);
 }
 
 /**
@@ -555,8 +569,73 @@ static bool Network_CheckAutoNegotiation(EthHandler_S *ethHandler){
 	return true;
 }
 
+
+
 /**
-* @Name  		
+* @Name  		Network_DestoryNetworkTask
+* @Author  		KT
+* @Description 	
+* @para    		
+*				
+*
+* @return		
+*/
+static void Network_DestoryNetworkTask(Network_TaskHandler_S *netHandler){
+	EthHandler_S *ethHandler;
+	TaskHandler_S *taskHandler = (TaskHandler_S *)netHandler;
+	Network_TaskType_EN type;
+
+	ERR_CHECK(taskHandler != null , return );
+
+	ethHandler = &EthHandler[taskHandler->index];
+	type = taskHandler->type;
+
+	switch(type){
+		case tEthernet:{}break;
+		case tUdp:{}break;
+
+		case tTcp:{
+			Network_TcpTaskPara_S *para = (Network_TcpTaskPara_S *)taskHandler->para;
+
+			if(para == null)
+				break;
+		
+			/* 关闭及删除TCP连接 */
+			netconn_close(taskHandler->destConn);
+			netconn_delete(taskHandler->destConn);
+			taskHandler->destConn = null;
+			
+			if(para->type == tServer){
+				netconn_close(taskHandler->srcConn);
+				netconn_delete(taskHandler->srcConn);
+				taskHandler->srcConn = null;
+			}
+
+			para->tcpListener(false);
+
+			/* 删除任务 */
+			vTaskDelete(taskHandler->task);
+
+			/* 删除接收队列 */
+			vQueueDelete(taskHandler->recBufQueue);
+
+			Log.d("Tcp %s task has been destory!\r\n", para->type == tServer ? "server" : "client");
+
+			/* 删除任务句柄 */
+			FREE(para);
+			FREE(taskHandler);
+			ethHandler->taskHandler[type] = null;
+		}break;
+
+		case tHttp:{
+
+		}break;
+	}
+}
+
+
+/**
+* @Name  		Network_CreatNetworkTask
 * @Author  		KT
 * @Description 	
 * @para    		
@@ -590,7 +669,7 @@ static Network_TaskHandler_S *Network_CreatNetworkTask(Network_EthIndex_EN index
 			taskHandler->recBufQueue = xQueueCreate(NETWORK_TASK_QUEUE_LEN,NETWORK_TASK_QUEUE_SIZE);
 			taskHandler->sendBufQueue = xQueueCreate(NETWORK_TASK_QUEUE_LEN,NETWORK_TASK_QUEUE_SIZE);
 			
-			if (xTaskCreate(Network_TaskEthernet, "Network.Task.Ethernet", NETWORK_TASK_STACK, taskHandler, NETWORK_TASK_PRIORITY, taskHandler->task) != pdPASS)
+			if (xTaskCreate(Network_TaskEthernet, "Network.Task.Ethernet", NETWORK_TASK_STACK, taskHandler, NETWORK_TASK_PRIORITY, &taskHandler->task) != pdPASS)
 			{
 				Log.e("create Network_TaskEthernet error\r\n");
 				goto creat_net_task_err;
@@ -611,9 +690,8 @@ static Network_TaskHandler_S *Network_CreatNetworkTask(Network_EthIndex_EN index
 			}
 			
 			taskHandler->recBufQueue = xQueueCreate(NETWORK_TASK_QUEUE_LEN,NETWORK_TASK_QUEUE_SIZE);
-//			taskHandler->sendBufQueue = xQueueCreate(NETWORK_TASK_QUEUE_LEN,NETWORK_TASK_QUEUE_SIZE);
 			
-			if (xTaskCreate(Network_TaskTcp, "Network.Task.Tcp", NETWORK_TASK_STACK, taskHandler, NETWORK_TASK_PRIORITY, taskHandler->task) != pdPASS)
+			if (xTaskCreate(Network_TaskTcp, "Network.Task.Tcp", NETWORK_TASK_STACK, taskHandler, NETWORK_TASK_PRIORITY, &taskHandler->task) != pdPASS)
 			{
 				Log.e("create Network_TaskTcp error\r\n");
 				goto creat_net_task_err;
@@ -1074,14 +1152,9 @@ static void Network_TaskTcp(void *pvParameters){
 			/* Process the new connection. */
 			if (err == ERR_OK) 
 			{
-//				struct netbuf *buf;
-//				void *data;
-//				u16_t len;
 
 				while ((err = netconn_recv(taskHandler->destConn, &buf)) == ERR_OK) {
-				/*printf("Recved\n");*/
 					do {
-//						netbuf_data(buf, &data, &len);
 //						err = netconn_write(taskHandler->destConn, data, len, NETCONN_COPY);
 					} while (netbuf_next(buf) >= 0);
 					netbuf_delete(buf);

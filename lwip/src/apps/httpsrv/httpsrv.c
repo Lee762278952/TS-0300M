@@ -14,7 +14,8 @@
 #include "httpsrv_prv.h"
 #include <string.h>
 
-#define HTTPSRV_SERVER_TASK_NAME "HTTP server"
+//#define HTTPSRV_SERVER_TASK_NAME "HTTP server"
+#define HTTPSRV_SERVER_TASK_NAME "Lwip.HttpServer"
 
 /*
 ** Function for starting the HTTP server

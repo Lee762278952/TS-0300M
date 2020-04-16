@@ -231,6 +231,7 @@ typedef struct {
 
 	void (*ethConfig)(Network_EthPara_S *);
 	Network_TaskHandler_S *(*creatTask)(Network_EthIndex_EN ,Network_TaskType_EN ,Network_TaskPara );
+	void (*destoryTask)(Network_TaskHandler_S *netHandler);
 	void (*receive)(Network_TaskHandler_S *, Network_DataBuf_S * ,uint32_t);
 	void (*transmit)(Network_TaskHandler_S *,Network_DataBuf_S *);
 } Network_S;

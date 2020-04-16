@@ -14,15 +14,23 @@
 /*******************************************************************************
  * includes
  ******************************************************************************/
+/* GLOBAL */
 #include "log.h"
+
+/* SDK */
 #include "board.h"
 #include "fsl_flexram.h"
-#include "ram.h"
 #include "pin_mux.h"
 #include "clock_config.h"
+
+/* OS */
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS.h"
 #include "task.h"
+
+/* APP */
+#include "ram.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/

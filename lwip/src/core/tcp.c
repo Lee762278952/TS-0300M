@@ -175,6 +175,8 @@ tcp_remove_listener(struct tcp_pcb *list, struct tcp_pcb_listen *lpcb)
    struct tcp_pcb *pcb;
    for (pcb = list; pcb != NULL; pcb = pcb->next) {
       if (pcb->listener == lpcb) {
+	  	 pcb->local_port = 0;   /* modify 2020.04.16 */
+		 memset(pcb->listener,0,sizeof(struct tcp_pcb_listen));
          pcb->listener = NULL;
       }
    }

@@ -17,18 +17,22 @@
 /* DRIVER */
 #include "mp3/wt2000a.h"
 
+/* HAL */
+#include "hal_gpio.h"
+#include "hal_aud_codec.h"
+
 /* OS */
 #include "FreeRTOS.h"
 #include "timers.h"
 #include "semphr.h"
 
-/* API */
+/* GLOBAL */
+#include "log.h"
+
+/* APP */
 #include "ram.h"
 #include "audio.h"
 
-/* HAL */
-#include "hal_gpio.h"
-#include "hal_aud_codec.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -112,7 +116,6 @@ static void Audio_CmdProcecssTask(void *pvParameters);
 
 
 /* API */
-//static void Audio_Launch(void);
 static void Audio_RecordStart(const char *fileName);
 static void Audio_RecordStop(void);
 static void Audio_PlayPause(void);
@@ -173,7 +176,7 @@ static bool isFirstPlayOrRecord = true;
 
 static AppTask_S ConfigTask = {
 	.task = Audio_ConfigTask,
-	.name = "Audio.Config",	
+	.name = "App.Audio.Config",	
 	.stack = AUDIO_TASK_STACK,
 	.para = null,
 	.prio = AUDIO_TASK_PRIORITY,
@@ -182,7 +185,7 @@ static AppTask_S ConfigTask = {
 
 static AppTask_S CmdProcess = {
 	.task = Audio_CmdProcecssTask,
-	.name = "Audio.CmdProcess",	
+	.name = "App.Audio.CmdProcess",	
 	.stack = AUDIO_TASK_STACK,
 	.para = null,
 	.prio = AUDIO_TASK_PRIORITY,

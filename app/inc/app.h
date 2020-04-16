@@ -8,10 +8,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/* api */
-//#include "log.h"
-//#include "ram.h"
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -23,7 +19,7 @@ typedef struct{
 	uint16_t stack;
 	void **para;
 	UBaseType_t prio;
-	TaskHandle_t *handle;
+	TaskHandle_t handle;
 }AppTask_S;
 
 

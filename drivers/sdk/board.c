@@ -5,13 +5,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "MIMXRT1062.h"
+
 #include "fsl_common.h"
 #include "fsl_debug_console.h"
-//#include "log.h"
 #include "board.h"
-#if defined(SDK_I2C_BASED_COMPONENT_USED) && SDK_I2C_BASED_COMPONENT_USED
-#include "fsl_lpi2c.h"
-#endif /* SDK_I2C_BASED_COMPONENT_USED */
 #include "fsl_iomuxc.h"
 
 /*******************************************************************************
@@ -42,248 +40,12 @@ uint32_t BOARD_DebugConsoleSrcFreq(void)
 }
 
 /* Initialize debug console. */
-void BOARD_InitDebugConsole(void)
-{
+//void BOARD_InitDebugConsole(void)
+//{
 //    uint32_t uartClkSrcFreq = BOARD_DebugConsoleSrcFreq();
 
 //    DbgConsole_Init(BOARD_DEBUG_UART_INSTANCE, BOARD_DEBUG_UART_BAUDRATE, BOARD_DEBUG_UART_TYPE, uartClkSrcFreq);
-}
-
-#if defined(SDK_I2C_BASED_COMPONENT_USED) && SDK_I2C_BASED_COMPONENT_USED
-void BOARD_LPI2C_Init(LPI2C_Type *base, uint32_t clkSrc_Hz)
-{
-    lpi2c_master_config_t lpi2cConfig = {0};
-
-    /*
-     * lpi2cConfig.debugEnable = false;
-     * lpi2cConfig.ignoreAck = false;
-     * lpi2cConfig.pinConfig = kLPI2C_2PinOpenDrain;
-     * lpi2cConfig.baudRate_Hz = 100000U;
-     * lpi2cConfig.busIdleTimeout_ns = 0;
-     * lpi2cConfig.pinLowTimeout_ns = 0;
-     * lpi2cConfig.sdaGlitchFilterWidth_ns = 0;
-     * lpi2cConfig.sclGlitchFilterWidth_ns = 0;
-     */
-    LPI2C_MasterGetDefaultConfig(&lpi2cConfig);
-    LPI2C_MasterInit(base, &lpi2cConfig, clkSrc_Hz);
-}
-
-status_t BOARD_LPI2C_Send(LPI2C_Type *base,
-                          uint8_t deviceAddress,
-                          uint32_t subAddress,
-                          uint8_t subAddressSize,
-                          uint8_t *txBuff,
-                          uint8_t txBuffSize)
-{
-    status_t reVal;
-
-    /* Send master blocking data to slave */
-    reVal = LPI2C_MasterStart(base, deviceAddress, kLPI2C_Write);
-    if (kStatus_Success == reVal)
-    {
-        while (LPI2C_MasterGetStatusFlags(base) & kLPI2C_MasterNackDetectFlag)
-        {
-        }
-
-        reVal = LPI2C_MasterSend(base, &subAddress, subAddressSize);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterSend(base, txBuff, txBuffSize);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterStop(base);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-    }
-
-    return reVal;
-}
-
-status_t BOARD_LPI2C_Receive(LPI2C_Type *base,
-                             uint8_t deviceAddress,
-                             uint32_t subAddress,
-                             uint8_t subAddressSize,
-                             uint8_t *rxBuff,
-                             uint8_t rxBuffSize)
-{
-    status_t reVal;
-
-    reVal = LPI2C_MasterStart(base, deviceAddress, kLPI2C_Write);
-    if (kStatus_Success == reVal)
-    {
-        while (LPI2C_MasterGetStatusFlags(base) & kLPI2C_MasterNackDetectFlag)
-        {
-        }
-
-        reVal = LPI2C_MasterSend(base, &subAddress, subAddressSize);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterRepeatedStart(base, deviceAddress, kLPI2C_Read);
-
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterReceive(base, rxBuff, rxBuffSize);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterStop(base);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-    }
-    return reVal;
-}
-
-status_t BOARD_LPI2C_SendSCCB(LPI2C_Type *base,
-                              uint8_t deviceAddress,
-                              uint32_t subAddress,
-                              uint8_t subAddressSize,
-                              uint8_t *txBuff,
-                              uint8_t txBuffSize)
-{
-    return BOARD_LPI2C_Send(base, deviceAddress, subAddress, subAddressSize, txBuff, txBuffSize);
-}
-
-status_t BOARD_LPI2C_ReceiveSCCB(LPI2C_Type *base,
-                                 uint8_t deviceAddress,
-                                 uint32_t subAddress,
-                                 uint8_t subAddressSize,
-                                 uint8_t *rxBuff,
-                                 uint8_t rxBuffSize)
-{
-    status_t reVal;
-
-    reVal = LPI2C_MasterStart(base, deviceAddress, kLPI2C_Write);
-    if (kStatus_Success == reVal)
-    {
-        while (LPI2C_MasterGetStatusFlags(base) & kLPI2C_MasterNackDetectFlag)
-        {
-        }
-
-        reVal = LPI2C_MasterSend(base, &subAddress, subAddressSize);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        /* SCCB does not support LPI2C repeat start, must stop then start. */
-        reVal = LPI2C_MasterStop(base);
-
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterStart(base, deviceAddress, kLPI2C_Read);
-
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterReceive(base, rxBuff, rxBuffSize);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-
-        reVal = LPI2C_MasterStop(base);
-        if (reVal != kStatus_Success)
-        {
-            return reVal;
-        }
-    }
-    return reVal;
-}
-
-void BOARD_Accel_I2C_Init(void)
-{
-    BOARD_LPI2C_Init(BOARD_ACCEL_I2C_BASEADDR, BOARD_ACCEL_I2C_CLOCK_FREQ);
-}
-
-status_t BOARD_Accel_I2C_Send(uint8_t deviceAddress, uint32_t subAddress, uint8_t subaddressSize, uint32_t txBuff)
-{
-    uint8_t data = (uint8_t)txBuff;
-
-    return BOARD_LPI2C_Send(BOARD_ACCEL_I2C_BASEADDR, deviceAddress, subAddress, subaddressSize, &data, 1);
-}
-
-status_t BOARD_Accel_I2C_Receive(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subaddressSize, uint8_t *rxBuff, uint8_t rxBuffSize)
-{
-    return BOARD_LPI2C_Receive(BOARD_ACCEL_I2C_BASEADDR, deviceAddress, subAddress, subaddressSize, rxBuff, rxBuffSize);
-}
-
-void BOARD_Codec_I2C_Init(void)
-{
-    BOARD_LPI2C_Init(BOARD_CODEC_I2C_BASEADDR, BOARD_CODEC_I2C_CLOCK_FREQ);
-}
-
-status_t BOARD_Codec_I2C_Send(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, const uint8_t *txBuff, uint8_t txBuffSize)
-{
-    return BOARD_LPI2C_Send(BOARD_CODEC_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, (uint8_t *)txBuff,
-                            txBuffSize);
-}
-
-status_t BOARD_Codec_I2C_Receive(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, uint8_t *rxBuff, uint8_t rxBuffSize)
-{
-    return BOARD_LPI2C_Receive(BOARD_CODEC_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, rxBuff, rxBuffSize);
-}
-
-void BOARD_Camera_I2C_Init(void)
-{
-    CLOCK_SetMux(kCLOCK_Lpi2cMux, BOARD_CAMERA_I2C_CLOCK_SOURCE_SELECT);
-    CLOCK_SetDiv(kCLOCK_Lpi2cDiv, BOARD_CAMERA_I2C_CLOCK_SOURCE_DIVIDER);
-    BOARD_LPI2C_Init(BOARD_CAMERA_I2C_BASEADDR, BOARD_CAMERA_I2C_CLOCK_FREQ);
-}
-
-status_t BOARD_Camera_I2C_Send(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, const uint8_t *txBuff, uint8_t txBuffSize)
-{
-    return BOARD_LPI2C_Send(BOARD_CAMERA_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, (uint8_t *)txBuff,
-                            txBuffSize);
-}
-
-status_t BOARD_Camera_I2C_Receive(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, uint8_t *rxBuff, uint8_t rxBuffSize)
-{
-    return BOARD_LPI2C_Receive(BOARD_CAMERA_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, rxBuff,
-                               rxBuffSize);
-}
-
-status_t BOARD_Camera_I2C_SendSCCB(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, const uint8_t *txBuff, uint8_t txBuffSize)
-{
-    return BOARD_LPI2C_SendSCCB(BOARD_CAMERA_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, (uint8_t *)txBuff,
-                                txBuffSize);
-}
-
-status_t BOARD_Camera_I2C_ReceiveSCCB(
-    uint8_t deviceAddress, uint32_t subAddress, uint8_t subAddressSize, uint8_t *rxBuff, uint8_t rxBuffSize)
-{
-    return BOARD_LPI2C_ReceiveSCCB(BOARD_CAMERA_I2C_BASEADDR, deviceAddress, subAddress, subAddressSize, rxBuff,
-                                   rxBuffSize);
-}
-#endif /* SDK_I2C_BASED_COMPONENT_USED */
+//}
 
 /* MPU configuration. */
 void BOARD_ConfigMPU(void)
@@ -441,9 +203,9 @@ void BOARD_SD_Pin_Config(uint32_t speed, uint32_t strength)
 }
 #endif
 
-void BOARD_MMC_Pin_Config(uint32_t speed, uint32_t strength)
-{
-}
+//void BOARD_MMC_Pin_Config(uint32_t speed, uint32_t strength)
+//{
+//}
 
 void BOARD_InitModuleClock(void)
 {
@@ -451,5 +213,33 @@ void BOARD_InitModuleClock(void)
 	config.enableClkOutput1 = true;
 	config.loopDivider1 = 1;
     CLOCK_InitEnetPll(&config);
+}
+
+void BOARD_SoftReset(void){
+	SRC->SCR |= SRC_SCR_CORE0_RST_MASK;
+}
+
+void BOARD_UidGet(uint8_t *uid){
+	uint32_t cfg0, cfg1;
+
+	if(uid == 0)
+		return;
+
+#if defined(K32H844P_SERIES)
+	cfg0 = OCOTP->CFG[0].CFG;
+	cfg1 = OCOTP->CFG[1].CFG;
+#else
+	cfg0 = OCOTP->CFG0;
+	cfg1 = OCOTP->CFG1;
+#endif
+	uid[0] = cfg0 >> 24;
+	uid[1] = cfg0 >> 16;
+	uid[2] = cfg0 >> 8;
+	uid[3] = cfg0 >> 0;
+	
+	uid[4] = cfg1 >> 24;
+	uid[5] = cfg1 >> 16;
+	uid[6] = cfg1 >> 8;
+	uid[7] = cfg1 >> 0;
 }
 

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "board.h"
 #include "global_config.h"
 #include "log.h"
 
@@ -66,10 +67,11 @@ char *APP_BuildTime(void)
 }
 
 void APP_PrintDeviceMsg(void){
-	printf("\r\n********************************************\r\n");
+	printf("\r\n\r\n\r\n\r\n********************************************\r\n");
 	printf("**      Model:   %s\r\n",DEVICE_MODEL);
 	printf("**    Version:   %s\r\n",APP_VERSION);
 	printf("** Build time:   %s\r\n",APP_BUILD_TIME);
+//	printf("**    MCU UID:   %02X %02X %02X %02X %02X %02X %02X %02X\r\n",);
 	printf("********************************************\r\n\r\n");
 }
 

@@ -24,15 +24,17 @@
 #include "timers.h"
 #include "queue.h"
 
-/* API */
-#include "data_queue.h"
-#include "ram.h"
+/* GLOBAL */
+#include "log.h"
 
 /* APP */
 #include "external_ctrl.h"
 #include "database.h"
 #include "camera.h"
 #include "conference.h"
+#include "data_queue.h"
+#include "ram.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -92,7 +94,7 @@ static uint8_t CurrentCamChannel = 0;
 
 static AppTask_S UartSend = {
 	.task = Camera_UartTransmitTask,
-	.name = "Camera.UartSend",	
+	.name = "App.Camera.UartSend",	
 	.stack = CAMERA_SEND_TASK_STACK,
 	.para = null,
 	.prio = CAMERA_SEND_TASK_PRIORITY,
@@ -161,7 +163,7 @@ static void Camera_UartTransmitTask(void *pvParameters){
 		DELAY(25);
 		/* 因为摄像跟踪和外部控制通用一个串口，因此摄像跟踪调用外部控制发送代码 */
 		ExternalCtrl.transByByte(kType_NotiSrc_UartCtrl,cmd->data,cmd->len);
-#if 1
+#if 0
 		Log.d("Camera transmit: \r\n");
 			for(uint8_t i = 0;i < cmd->len;i++){
 				printf("%02X ",cmd->data[i]);
