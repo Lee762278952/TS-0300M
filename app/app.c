@@ -159,6 +159,7 @@ static AppLauncher_S **AppLauncher[] = {
     &ExternalCtrl.launcher,
     &Dsp.launcher,
     &Audio.launcher,
+    &Log.launcher,
 };
 
 const uint8_t NumOfApp = (sizeof(AppLauncher) / sizeof(void *));
@@ -316,7 +317,7 @@ static void App_LauncherTask(void *pvParameters)
 //	char listBuf[1000];
 //	taskENTER_CRITICAL();
 
-    Log.init();
+//    Log.init();
 	Log.i("%s start to Initialization ... \r\n\r\n",DEVICE_MODEL);
 
 

@@ -130,6 +130,8 @@ typedef enum {
     kStatus_UnitMic_Wait,
 } UnitMicSta_EN;
 
+
+
 /* 系统语言种类 */
 typedef enum {
     Chinese = 0,
@@ -268,7 +270,6 @@ typedef struct {
 /* API struct */
 typedef struct {
 	AppLauncher_S *launcher;
-//    void (*launch)(void);
 
     void (*notify)(Notify_S *);
     void (*getOnlineNum)(UnitOnlineNum *);

@@ -59,10 +59,10 @@ extern void APP_GetBuildDate(uint16_t *year,uint16_t *mon,uint16_t *day);
  ********************************************************************************************/
 /* 关闭以下功能编译和下载代码会快很多，一般测试用 */
 /* WEB功能开关 */
-#define WEB_FUNCTION_ENABLE												(true)
+#define WEB_FUNCTION_ENABLE												(false)
 
 /* DSP功能开关 */
-#define DSP_FUNCTION_ENABLE  											(true)
+#define DSP_FUNCTION_ENABLE  											(false)
 
 /*********************************************************************************************
  * 							    调试信息相关定义

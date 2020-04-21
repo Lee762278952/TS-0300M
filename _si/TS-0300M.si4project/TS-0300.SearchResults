@@ -1,0 +1,2 @@
+---- "IDLE" Matches (1 in 1 files) ----
+tasks.c (D:\KT\TS-0300\Program\TS-0300M-RT1061CVL5A\amazon-freertos\lib\FreeRTOS) line 129 : 	#define configIDLE_TASK_NAME "IDLE"

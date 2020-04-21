@@ -1438,15 +1438,26 @@ unitVoted:
             case SET_LANGUAGE(English):
             case SET_LANGUAGE(Russian):
             case SET_LANGUAGE(French): {
+                /* WIFI系统的语言字段不一样 */
+                uint8_t wifiLang = (cmd - 0xF0);
+
+                /* wifi修正系统语言字段,中英文翻转 */
+                if(wifiLang == 0x00)
+                    wifiLang = 0x01;
+                else if(wifiLang == 0x01)
+                    wifiLang = 0x00;
+
                 Protocol.conference(&confProt,UNIT_BROADCAST_ID,BASIC_MSG,UNIT_CTRL,cmd,null,null);
 
                 if(id == UNIT_BROADCAST_ID) {
                     SysInfo.config->language = (Language_EN)(cmd - 0xF0);
+
+
                     /* 回复控制主机确定 */
                     ExternalCtrl.transmit(EX_CTRL_DEST,&confProt);
                     /* 广播到单元 */
                     WiredUnit.transmit(&confProt);
-                    WifiUnit.transmit(kMode_Wifi_Multicast,Protocol.wifiUnit(&wifiProt,null, SetLanguage_MtoU_G, SysInfo.config->language, null));
+                    WifiUnit.transmit(kMode_Wifi_Multicast,Protocol.wifiUnit(&wifiProt,null, SetLanguage_MtoU_G, wifiLang, null));
                     /* 设置屏幕语言 */
                     Screen.setLanguage(SysInfo.config->language);
                 }
@@ -1461,7 +1472,7 @@ unitVoted:
 
             }
             break;
-			/* 有线单元透传 */
+            /* 有线单元透传 */
             case 0x39:/* 保存EQ数据 */
             case 0x42:/* HPF调节 */
             case 0x50:/* 调节电子桌牌的音量值 */
@@ -1479,11 +1490,10 @@ unitVoted:
             case 0x66:/* 透传，备用 */
             case 0x67:/* 透传，备用 */
             case 0x68:/* 透传，备用 */
-            case 0x69:
-			{
-				if(idUnitType == kType_Unit_Wired)
-                    WiredUnit.transWithExData(Protocol.conference(&confProt,id,BASIC_MSG,UNIT_CTRL,cmd,protPara[2],protPara[3] << 8 | protPara[4]),protExLen,protExData);
-			}break;
+            case 0x69: {
+				WiredUnit.transWithExData(Protocol.conference(&confProt,id,BASIC_MSG,UNIT_CTRL,cmd,protPara[2],protPara[3] << 8 | protPara[4]),protExLen,protExData);
+            }
+            break;
 
             }
         }
